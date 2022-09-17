@@ -16,6 +16,7 @@ func SetupRoutes() {
 	r.HandleFunc("/login", Login).Methods(http.MethodGet)
 	r.HandleFunc("/makeLoginRequest", MakeLoginRequest).Methods(http.MethodPost)
 	r.HandleFunc("/register", Register).Methods(http.MethodGet)
+	r.HandleFunc("/makeRegisterRequest", MakeRegisterRequest).Methods(http.MethodPost)
 
 	//api := r.PathPrefix("/api/v1").Subrouter()
 
@@ -52,10 +53,38 @@ func MakeLoginRequest(w http.ResponseWriter, r *http.Request) {
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body) // response body is []byte
 	fmt.Println(string(body))
+
+	destUrl := "http://localhost:8080/"
+	http.Redirect(w, r, destUrl, http.StatusFound)
+
+	// w.Header().Set("Content-type", "text/html")
+	// w.WriteHeader(http.StatusOK)
+	// tpl.ExecuteTemplate(w, "index.html", nil)
 }
 
 func Register(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "text/html")
 	w.WriteHeader(http.StatusOK)
 	tpl.ExecuteTemplate(w, "register.html", nil)
+}
+
+func MakeRegisterRequest(w http.ResponseWriter, r *http.Request) {
+	username := r.FormValue("username")
+	email := r.FormValue("email")
+	password := r.FormValue("password")
+
+	params := url.Values{}
+	params.Add("username", username)
+	params.Add("email", email)
+	params.Add("password", password)
+	resp, _ := http.PostForm("http://localhost:8081/api/v1/register",
+		params)
+
+	fmt.Println("respBody")
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body) // response body is []byte
+	fmt.Println(string(body))
+
+	destUrl := "http://localhost:8080/"
+	http.Redirect(w, r, destUrl, http.StatusFound)
 }

@@ -19,9 +19,9 @@ import (
 
 var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 	fmt.Printf("Message %s received on topic %s\n", msg.Payload(), msg.Topic())
-	// 	db := src.ConnectToDb()
-	// 	defer db.Close()
-	// 	src.SendMqttMessageToDb(db, string(msg.Payload()), string(msg.Topic()))
+	db := src.ConnectToDb()
+	defer db.Close()
+	src.SendMqttMessageToDb(db, string(msg.Payload()), string(msg.Topic()))
 }
 
 var connectHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
