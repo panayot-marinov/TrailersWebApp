@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -30,6 +31,7 @@ func Get(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "text/html")
 	w.WriteHeader(http.StatusOK)
 	//w.Write([]byte(`{"message": "get called"}`))
+
 	tpl.ExecuteTemplate(w, "index.html", nil) //Read about nginx
 }
 
@@ -53,9 +55,38 @@ func MakeLoginRequest(w http.ResponseWriter, r *http.Request) {
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body) // response body is []byte
 	fmt.Println(string(body))
+	fmt.Println("code = " + strconv.Itoa(resp.StatusCode))
 
+	if resp.StatusCode == http.StatusUnauthorized {
+		w.WriteHeader(http.StatusUnauthorized)
+		destUrl := "http://localhost:8080/login"
+		http.Redirect(w, r, destUrl, http.StatusUnauthorized)
+	} else if resp.StatusCode != http.StatusFound {
+		w.WriteHeader(http.StatusInternalServerError)
+		destUrl := "http://localhost:8080/login"
+		http.Redirect(w, r, destUrl, http.StatusInternalServerError)
+	}
+
+	//find cookie
+	var cookie *http.Cookie = nil
+	for _, currentCookie := range resp.Cookies() {
+		if currentCookie.Name == "session_token" {
+			cookie = currentCookie
+		}
+	}
+	print("cookie.Value = " + cookie.Value)
+	if cookie == nil {
+		fmt.Println("there is no cookie in client")
+	} else {
+		fmt.Println("there is cookie in client")
+		http.SetCookie(w, cookie)
+	}
+
+	//-----
 	destUrl := "http://localhost:8080/"
-	http.Redirect(w, r, destUrl, http.StatusFound)
+	http.Redirect(w, r, destUrl, http.StatusSeeOther)
+
+	//tpl.ExecuteTemplate(w, "index.html", cookie)
 
 	// w.Header().Set("Content-type", "text/html")
 	// w.WriteHeader(http.StatusOK)

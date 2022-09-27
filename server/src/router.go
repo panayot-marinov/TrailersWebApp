@@ -1,7 +1,6 @@
 package src
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"fmt"
 	"log"
@@ -68,59 +67,4 @@ func hashSha256(str string) []byte {
 	data := []byte(str)
 	hashBytes := sha256.Sum256(data)
 	return hashBytes[:]
-}
-
-func Login(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-		return
-	}
-
-	db := ConnectToDb()
-	defer db.Close()
-	username := r.FormValue("username")
-	password := r.FormValue("password")
-	passwordHash := hashSha256(password)
-
-	fmt.Println("username =" + username)
-
-	var passwordHashDb []byte
-	row := db.QueryRow("SELECT \"password\" FROM \"Users\" WHERE \"username\"=$1", username)
-	if err := row.Scan(&passwordHashDb); err != nil {
-		fmt.Println("ERROR! Cannot execute select query!")
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-		return
-	}
-
-	passwordsEqual := bytes.Compare(passwordHash, passwordHashDb)
-	if passwordsEqual == 0 {
-		w.Write([]byte("Successfully logged in!"))
-	} else {
-		w.Write([]byte("Incorrect username or password!"))
-	}
-}
-
-func Register(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-		return
-	}
-
-	db := ConnectToDb()
-	defer db.Close()
-	username := r.FormValue("username")
-	email := r.FormValue("email")
-	password := r.FormValue("password")
-	hashedPassword := hashSha256(password)
-
-	fmt.Println("username =" + username)
-	fmt.Println("email =" + email)
-	//fmt.Println("password = " + hashedPassword)
-
-	query := "INSERT INTO \"Users\" (username, email, password) VALUES ($1, $2, $3)"
-	_, err := db.Exec(query, username, email, hashedPassword)
-	if err != nil {
-		fmt.Println("Error executing insert statement")
-		panic(err)
-	}
 }

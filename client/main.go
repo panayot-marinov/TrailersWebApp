@@ -8,8 +8,8 @@ package main
 import (
 
 	// "fmt" has methods for formatted I/O operations (like printing to the console)
+	"TrailersWebApp/client/src"
 	"fmt"
-	"trailers/client/src"
 
 	// The "net/http" library has methods to implement HTTP clients and servers
 	"net/http"
