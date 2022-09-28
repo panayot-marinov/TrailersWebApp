@@ -8,8 +8,8 @@ package main
 import (
 
 	// "fmt" has methods for formatted I/O operations (like printing to the console)
+	"TrailersWebApp/server/src"
 	"fmt"
-	"trailers/server/src"
 
 	// The "net/http" library has methods to implement HTTP clients and servers
 	"net/http"
@@ -19,9 +19,9 @@ import (
 
 var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 	fmt.Printf("Message %s received on topic %s\n", msg.Payload(), msg.Topic())
-	// 	db := src.ConnectToDb()
-	// 	defer db.Close()
-	// 	src.SendMqttMessageToDb(db, string(msg.Payload()), string(msg.Topic()))
+	db := src.ConnectToDb()
+	defer db.Close()
+	src.SendMqttMessageToDb(db, string(msg.Payload()), string(msg.Topic()))
 }
 
 var connectHandler mqtt.OnConnectHandler = func(client mqtt.Client) {

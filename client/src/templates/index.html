@@ -10,10 +10,11 @@
     integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
   <link rel="stylesheet" href="styles/mainStyle.css">
   <link rel="stylesheet" href="styles/indexStyle.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 </head>
 
 <body>
-
   <div class="container" id="pageContainer">
     <header>
       <nav class="navbar navbar-expand-lg navbar-light bg-light" id="myNavbarId">
@@ -33,12 +34,16 @@
                 <a class="nav-link active" aria-current="page" href="/">Home</a>
               </li>
             </ul>
-            <form action="/login" class="d-flex" method="GET">
-              <button class="btn btn-warning" type="submit">Login</button>
+
+            <form action="/login" id="loginForm" class="d-flex" method="GET">
+              <button id="loginBtn" class="btn btn-warning" type="submit">Login</button>
             </form>
             &nbsp;
-            <form action="/register" class="d-flex" method="GET">
-              <button class="btn btn-warning" type="submit">Register</button>
+            <form action="/register" id="registerForm" class="d-flex" method="GET">
+              <button id="registerBtn" class="btn btn-warning" type="submit">Register</button>
+            </form>
+            <form action="/logout" id="logoutForm" class="d-flex" method="POST">
+              <button id="logoutBtn" class="btn btn-warning" type="submit">Logout</button>
             </form>
           </div>
         </div>
@@ -76,6 +81,28 @@
       </footer>
     </div>
   </div>
+
+  <script type="text/javascript">
+    cookie = $.cookie("session_token");
+    console.log(cookie);
+
+    if(cookie === null || cookie === undefined) {
+      document.getElementById("loginForm").style.display="block";
+      document.getElementById("loginBtn").style.display="block";
+      document.getElementById("registerForm").style.display="block";
+      document.getElementById("registerBtn").style.display="block";
+      document.getElementById("logoutForm").style.display="none";
+      document.getElementById("logoutBtn").style.display="none";
+    } else {
+      document.getElementById("loginForm").style.display="none";
+      document.getElementById("loginBtn").style.display="none";
+      document.getElementById("registerForm").style.display="none";
+      document.getElementById("registerBtn").style.display="none";
+      document.getElementById("logoutForm").style.display="none";
+      document.getElementById("logoutBtn").style.display="block";
+    }
+  </script>
+
   <!--Bootstrap JS-->
   <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
     integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"

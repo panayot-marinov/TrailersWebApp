@@ -11,11 +11,12 @@ func ConnectToDb() *sql.DB {
 	//var connStr = os.Getenv("CONNSTR")
 	var host = os.Getenv("POSTGRES_HOST")
 	var port = os.Getenv("POSTGRES_PORT")
-	var dbname = os.Getenv("POSTGRES_DB")
+	//var dbname = os.Getenv("POSTGRES_DB")
+	var dbname = "MainDb"
 	var user = os.Getenv("POSTGRES_USER")
 	var password = os.Getenv("POSTGRES_PASSWORD")
 	var connect_timeout = os.Getenv("POSTGRES_CONNECT_TIMEOUT")
-	var sslmode = os.Getenv("POSTGRES_SSLMODE")
+	var sslmode = os.Getenv("POSTGRES_SSL_MODE")
 
 	var connStr = "user=" + user + " " +
 		"password=" + password + " " +
