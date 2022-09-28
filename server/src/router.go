@@ -14,8 +14,9 @@ func SetupRoutes() {
 	//r.HandleFunc("/", Get).Methods(http.MethodGet)
 	api := r.PathPrefix("/api/v1").Subrouter()
 	api.HandleFunc("/sendData", sendData).Methods(http.MethodPost)
-	api.HandleFunc("/register", Register).Methods(http.MethodPost)
 	api.HandleFunc("/login", Login).Methods(http.MethodPost)
+	api.HandleFunc("/register", Register).Methods(http.MethodPost)
+	api.HandleFunc("/logout", Logout).Methods(http.MethodPost)
 	// api.HandleFunc("/file/{fileID}", GetFile).Methods(http.MethodGet)
 	// api.HandleFunc("/searchFile", SearchFile).Methods(http.MethodGet)
 
