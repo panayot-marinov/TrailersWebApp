@@ -66,13 +66,15 @@ func MakeLoginRequest(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("code = " + strconv.Itoa(resp.StatusCode))
 
 	if resp.StatusCode == http.StatusUnauthorized {
-		w.WriteHeader(http.StatusUnauthorized)
+		//w.WriteHeader(http.StatusFound)
 		destUrl := "http://localhost:8080/login"
-		http.Redirect(w, r, destUrl, http.StatusUnauthorized)
-	} else if resp.StatusCode != http.StatusFound {
-		w.WriteHeader(http.StatusBadRequest)
+		http.Redirect(w, r, destUrl, http.StatusFound)
+		return
+	} else if resp.StatusCode != http.StatusOK {
+		//w.WriteHeader(http.StatusFound)
 		destUrl := "http://localhost:8080/login"
-		http.Redirect(w, r, destUrl, http.StatusBadRequest)
+		http.Redirect(w, r, destUrl, http.StatusFound)
+		return
 	}
 
 	//find cookie
