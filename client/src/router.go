@@ -1,6 +1,7 @@
 package src
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -8,6 +9,7 @@ import (
 	"net/http/cookiejar"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -21,6 +23,8 @@ func SetupRoutes() {
 	r.HandleFunc("/register", Register).Methods(http.MethodGet)
 	r.HandleFunc("/makeRegisterRequest", MakeRegisterRequest).Methods(http.MethodPost)
 	r.HandleFunc("/logout", MakeLogoutRequest).Methods(http.MethodPost)
+	r.HandleFunc("/account", GetAccountInfo).Methods(http.MethodGet)
+	r.HandleFunc("/makeChangePasswordRequest", MakeChangePasswordRequest).Methods(http.MethodPost)
 
 	//api := r.PathPrefix("/api/v1").Subrouter()
 
@@ -62,13 +66,15 @@ func MakeLoginRequest(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("code = " + strconv.Itoa(resp.StatusCode))
 
 	if resp.StatusCode == http.StatusUnauthorized {
-		w.WriteHeader(http.StatusUnauthorized)
+		//w.WriteHeader(http.StatusFound)
 		destUrl := "http://localhost:8080/login"
-		http.Redirect(w, r, destUrl, http.StatusUnauthorized)
-	} else if resp.StatusCode != http.StatusFound {
-		w.WriteHeader(http.StatusBadRequest)
+		http.Redirect(w, r, destUrl, http.StatusFound)
+		return
+	} else if resp.StatusCode != http.StatusOK {
+		//w.WriteHeader(http.StatusFound)
 		destUrl := "http://localhost:8080/login"
-		http.Redirect(w, r, destUrl, http.StatusBadRequest)
+		http.Redirect(w, r, destUrl, http.StatusFound)
+		return
 	}
 
 	//find cookie
@@ -184,4 +190,156 @@ func MakeLogoutRequest(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("redirect 2")
 	destUrl := r.Header.Get("Referer")
 	http.Redirect(w, r, destUrl, http.StatusSeeOther)
+}
+
+func GetAccountInfo(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-type", "text/html")
+
+	client := &http.Client{}
+	req, err := http.NewRequest(http.MethodGet, "http://localhost:8081/api/v1/account", nil)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		tpl.ExecuteTemplate(w, "account.html", nil)
+		return
+	}
+
+	cookie, err := r.Cookie("session_token")
+	if err != nil {
+		print("cannot get cookie\n")
+		w.WriteHeader(http.StatusInternalServerError)
+		tpl.ExecuteTemplate(w, "account.html", nil)
+		return
+	}
+	req.AddCookie(cookie)
+	resp, err := client.Do(req)
+	if err != nil {
+		print("cannot call api\n")
+		w.WriteHeader(http.StatusInternalServerError)
+		tpl.ExecuteTemplate(w, "account.html", nil)
+		return
+	}
+	decoder := json.NewDecoder(resp.Body)
+
+	defer resp.Body.Close()
+
+	var account Account
+	err = decoder.Decode(&account)
+	print(account.Username)
+	print(account.Email)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		tpl.ExecuteTemplate(w, "account.html", nil)
+		return
+	}
+
+	// body, err := ioutil.ReadAll(resp.Body)
+	// if err != nil {
+	// 	w.WriteHeader(http.StatusInternalServerError)
+	// 	print("aaa")
+	// 	tpl.ExecuteTemplate(w, "profile.html", nil)
+	// 	return
+	// }
+	// print("body\n")
+	// print(string(body[:]))
+	// print("\n")
+	// defer resp.Body.Close()
+
+	// err = json.Unmarshal(body, &account)
+	// print(account.Username)
+	// print(account.Email)
+	// if err != nil {
+	// 	w.WriteHeader(http.StatusInternalServerError)
+	// 	print("bbb")
+	// 	tpl.ExecuteTemplate(w, "profile.html", nil)
+	// 	return
+	// }
+
+	w.WriteHeader(http.StatusOK)
+	params := url.Values{}
+	params.Add("username", account.Username)
+	params.Add("email", account.Email)
+
+	tpl.ExecuteTemplate(w, "account.html", account)
+}
+
+func MakeChangePasswordRequest(w http.ResponseWriter, r *http.Request) {
+	password := r.FormValue("password")
+	passwordRepeated := r.FormValue("passwordRepeated")
+
+	print("password " + password + " passwordRepeated " + passwordRepeated + "\n")
+
+	client := &http.Client{}
+	params := url.Values{}
+	params.Add("password", password)
+	params.Add("passwordRepeated", passwordRepeated)
+	req, err := http.NewRequest(http.MethodPost, "http://localhost:8081/api/v1/changePassword", strings.NewReader(params.Encode()))
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		tpl.ExecuteTemplate(w, "account.html", nil)
+		return
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	print("request made \n")
+
+	cookie, err := r.Cookie("session_token")
+	if err != nil {
+		print("cannot get cookie\n")
+		w.WriteHeader(http.StatusInternalServerError)
+		tpl.ExecuteTemplate(w, "account.html", nil)
+		return
+	}
+
+	print("cookie got successfully\n")
+	print(cookie)
+	req.AddCookie(cookie)
+	print("1")
+	print("2")
+	print("before making request")
+	resp, err := client.Do(req)
+	print("request made")
+	if err != nil {
+		print("cannot call api\n")
+		w.WriteHeader(http.StatusInternalServerError)
+		tpl.ExecuteTemplate(w, "account.html", nil)
+		return
+	}
+	print("request made successfully\n")
+	print("resp body")
+	print(resp.Body)
+
+	//decoder := json.NewDecoder(resp.Body)
+
+	//defer resp.Body.Close()
+
+	fmt.Println("respBody")
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body) // response body is []byte
+	fmt.Println(string(body))
+	fmt.Println("code = " + strconv.Itoa(resp.StatusCode))
+
+	if resp.StatusCode == http.StatusUnauthorized {
+		print("1\n")
+		w.WriteHeader(http.StatusUnauthorized)
+		destUrl := "http://localhost:8080/login"
+		http.Redirect(w, r, destUrl, http.StatusFound)
+		return
+	} else if resp.StatusCode != http.StatusOK {
+		print("2\n")
+		w.WriteHeader(http.StatusBadRequest)
+		destUrl := "http://localhost:8080/login"
+		http.Redirect(w, r, destUrl, http.StatusFound)
+		return
+	}
+
+	print("3\n")
+	//-----
+	destUrl := "http://localhost:8080/account"
+	http.Redirect(w, r, destUrl, http.StatusSeeOther)
+
+	//tpl.ExecuteTemplate(w, "index.html", cookie)
+
+	// w.Header().Set("Content-type", "text/html")
+	// w.WriteHeader(http.StatusOK)
+	// tpl.ExecuteTemplate(w, "index.html", nil)
 }
