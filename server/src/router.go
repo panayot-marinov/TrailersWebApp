@@ -17,6 +17,8 @@ func SetupRoutes() {
 	api.HandleFunc("/login", Login).Methods(http.MethodPost)
 	api.HandleFunc("/register", Register).Methods(http.MethodPost)
 	api.HandleFunc("/logout", Logout).Methods(http.MethodPost)
+	api.HandleFunc("/account", GetAccountInfo).Methods(http.MethodGet)
+	api.HandleFunc("/changePassword", ChangePassword).Methods(http.MethodPost)
 	// api.HandleFunc("/file/{fileID}", GetFile).Methods(http.MethodGet)
 	// api.HandleFunc("/searchFile", SearchFile).Methods(http.MethodGet)
 

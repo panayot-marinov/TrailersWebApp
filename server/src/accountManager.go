@@ -2,6 +2,7 @@ package src
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -9,51 +10,59 @@ import (
 	"github.com/google/uuid"
 )
 
-var sessions = map[string]session{}
+var sessions = map[string]Session{}
 
-func Welcome(w http.ResponseWriter, r *http.Request) (bool, string, session) {
+func Welcome(w http.ResponseWriter, r *http.Request) (bool, string, Session, *http.Cookie) {
 	// We can obtain the session token from the requests cookies, which come with every request
 	c, err := r.Cookie("session_token")
 	if err != nil {
+		print("Cookie error\n")
 		if err == http.ErrNoCookie {
 			// If the cookie is not set, return an unauthorized status
 			w.WriteHeader(http.StatusUnauthorized)
-			return false, "", session{}
+			return false, "", Session{}, &http.Cookie{}
 		}
+		print("cookie got but bad request")
 		// For any other type of error, return a bad request status
 		w.WriteHeader(http.StatusBadRequest)
-		return false, "", session{}
+		return false, "", Session{}, c
 	}
 	sessionToken := c.Value
+	print("session token got")
 
 	// We then get the session from our session map
 	userSession, exists := sessions[sessionToken]
+	print("USER SESSION GOT")
 	if !exists {
 		// If the session token is not present in session map, return an unauthorized error
 		w.WriteHeader(http.StatusUnauthorized)
-		return false, "", session{
-			"notExists",
-			time.Unix(0, 0),
-		}
+		return false, "", Session{
+				"invalid",
+				time.Unix(0, 0),
+			},
+			c
 	}
 	// If the session is present, but has expired, we can delete the session, and return
 	// an unauthorized status
 	if userSession.isExpired() {
-		delete(sessions, sessionToken)
-		w.WriteHeader(http.StatusUnauthorized)
-		return false, "", userSession
+		print("user session expired\n")
+		sessionToken, userSession, _ = Refresh(w, r)
+		//delete(sessions, sessionToken)
+		//w.WriteHeader(http.StatusUnauthorized)
+		//return false, "", userSession
 	}
 
-	return true, sessionToken, userSession
+	return true, sessionToken, userSession, c
 	// If the session is valid, return the welcome message to the user
 	//w.Write([]byte(fmt.Sprintf("Welcome %s!", userSession.username)))
 }
 
-func Refresh(w http.ResponseWriter, r *http.Request) *http.Cookie {
+func Refresh(w http.ResponseWriter, r *http.Request) (string, Session, *http.Cookie) {
 	// (BEGIN) The code from this point is the same as the first part of the `Welcome` route
-	sessionGotSuccessfully, sessionToken, userSession := Welcome(w, r)
+	sessionGotSuccessfully, sessionToken, userSession, _ := Welcome(w, r)
 	if !sessionGotSuccessfully {
-		return &http.Cookie{
+		print("session not got successfully\n")
+		return "", userSession, &http.Cookie{
 			Name:    "session_token",
 			Value:   sessionToken,
 			Expires: time.Unix(0, 0),
@@ -66,7 +75,7 @@ func Refresh(w http.ResponseWriter, r *http.Request) *http.Cookie {
 	expiresAt := time.Now().Add(120 * time.Second)
 
 	// Set the token in the session map, along with the user whom it represents
-	newSession := session{
+	newSession := Session{
 		username: userSession.username,
 		expiry:   expiresAt,
 	}
@@ -83,21 +92,23 @@ func Refresh(w http.ResponseWriter, r *http.Request) *http.Cookie {
 	}
 	http.SetCookie(w, newCookie)
 
-	return newCookie
+	return newSessionToken, newSession, newCookie
 }
 
-func CheckCookie(w http.ResponseWriter, r *http.Request) (bool, *http.Cookie) {
-	sessionGotSuccessfully, sessionToken, userSession := Welcome(w, r)
+func CheckCookie(w http.ResponseWriter, r *http.Request) (bool, Session, *http.Cookie) {
+	sessionGotSuccessfully, sessionToken, userSession, cookie := Welcome(w, r)
 	if !sessionGotSuccessfully && userSession.expiry.Equal(time.Unix(0, 0)) {
-		return false, &http.Cookie{
-			Name:    "session_token",
-			Value:   sessionToken,
-			Expires: time.Unix(0, 0),
-		}
-	} else {
-		refreshedCookie := Refresh(w, r)
-		return true, refreshedCookie
+		print("cookie invalid\n")
+		return false, Session{
+				"invalid",
+				time.Unix(0, 0),
+			}, &http.Cookie{
+				Name:    "session_token",
+				Value:   sessionToken,
+				Expires: time.Unix(0, 0),
+			}
 	}
+	return true, userSession, cookie
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
@@ -135,7 +146,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	sessionToken := uuid.NewString()
 	expiresAt := time.Now().Add(120 * time.Second)
 
-	sessions[sessionToken] = session{
+	sessions[sessionToken] = Session{
 		username: username,
 		expiry:   expiresAt,
 	}
@@ -168,8 +179,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	password := r.FormValue("password")
 	hashedPassword := hashSha256(password)
 
-	query := "INSERT INTO \"Users\" (username, email, password) VALUES ($1, $2, $3)"
-	_, err := db.Exec(query, username, email, hashedPassword)
+	err := RegisterNewAccountToDb(db, username, email, password, string(hashedPassword))
 	if err != nil {
 		fmt.Println("Error executing insert statement")
 		w.WriteHeader(http.StatusUnauthorized)
@@ -225,5 +235,82 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		http.Redirect(w, r, prevUrl, http.StatusUnauthorized)
 		return
+	}
+}
+
+func GetAccountInfo(w http.ResponseWriter, r *http.Request) {
+	print("a0\n")
+	prevUrl := r.Header.Get("Referer")
+
+	hasValidData, session, _ := CheckCookie(w, r)
+	if !hasValidData {
+		w.WriteHeader(http.StatusUnauthorized)
+		http.Redirect(w, r, prevUrl, http.StatusUnauthorized)
+		return
+	}
+	print("a1\n")
+
+	db := ConnectToDb()
+	defer db.Close()
+	account, err := GetAccountInfoFromDb(db, session.username)
+	account.Username = session.username
+	print("a2\n")
+	if err != nil {
+		print("a3\n")
+		w.WriteHeader(http.StatusBadRequest)
+		http.Redirect(w, r, prevUrl, http.StatusBadRequest)
+		return
+	}
+	print("a4\n")
+
+	//w.Header().Set("Content-Type", "application/json")
+	//json.NewEncoder(w).Encode(account)
+
+	jData, err := json.Marshal(account)
+	print(account.Username)
+	print(account.Email)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Redirect(w, r, prevUrl, http.StatusInternalServerError)
+		return
+	}
+	print(string(jData[:]))
+	print("\n")
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(jData)
+	print("a5\n")
+}
+
+func ChangePassword(w http.ResponseWriter, r *http.Request) {
+	prevUrl := r.Header.Get("Referer")
+
+	password := r.FormValue("password")
+	passwordRepeated := r.FormValue("passwordRepeated")
+
+	print("password " + password + " passwordRepeated " + passwordRepeated + "\n")
+
+	if password != passwordRepeated {
+		w.WriteHeader(http.StatusBadRequest)
+		http.Redirect(w, r, prevUrl, http.StatusBadRequest)
+		return
+	}
+
+	hasValidData, session, _ := CheckCookie(w, r)
+	if !hasValidData {
+		print("no valid data changing password")
+		w.WriteHeader(http.StatusUnauthorized)
+		http.Redirect(w, r, prevUrl, http.StatusUnauthorized)
+		return
+	}
+
+	hashedPassword := hashSha256(password)
+
+	db := ConnectToDb()
+	defer db.Close()
+	err := UpdateAccountPasswordToDb(db, session.username, string(hashedPassword))
+	if err != nil {
+		fmt.Println("Error executing insert statement")
+		w.WriteHeader(http.StatusUnauthorized)
+		panic(err)
 	}
 }
