@@ -10,15 +10,38 @@ import (
 )
 
 func SetupRoutes() {
+	logger := NewLogger()
+	var configs Configurations
+	configs.SendGridApiKey = "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"
+	configs.MailVerifCodeExpiration = 3
+	configs.PassResetCodeExpiration = 30
+	configs.MailVerifTemplateID = "d-765c9b3176b940e0bafee768b5d44124"
+	configs.PassResetTemplateID = "d-8520acc570d64a5686e6fa8ef40ff2cd"
+	mailService := NewSGMailService(logger, configs)
+	authHandler := NewAuthHandler(mailService, logger)
+
 	r := mux.NewRouter()
 	//r.HandleFunc("/", Get).Methods(http.MethodGet)
 	api := r.PathPrefix("/api/v1").Subrouter()
 	api.HandleFunc("/sendData", sendData).Methods(http.MethodPost)
-	api.HandleFunc("/login", Login).Methods(http.MethodPost)
-	api.HandleFunc("/register", Register).Methods(http.MethodPost)
-	api.HandleFunc("/logout", Logout).Methods(http.MethodPost)
-	api.HandleFunc("/account", GetAccountInfo).Methods(http.MethodGet)
-	api.HandleFunc("/changePassword", ChangePassword).Methods(http.MethodPost)
+	api.HandleFunc("/login", authHandler.Login).Methods(http.MethodPost)
+	api.HandleFunc("/register", authHandler.Register).Methods(http.MethodPost)
+	api.HandleFunc("/logout", authHandler.Logout).Methods(http.MethodPost)
+	api.HandleFunc("/account", authHandler.GetAccountInfo).Methods(http.MethodGet)
+	api.HandleFunc("/changePassword", authHandler.ChangePassword).Methods(http.MethodPost)
+	api.HandleFunc("/deleteAccount", authHandler.DeleteAccount).Methods(http.MethodPost)
+	api.HandleFunc("/generatePasswordResetCode", authHandler.GeneratePasswordResetCode).Methods(http.MethodGet)
+	api.HandleFunc("/passwordReset", authHandler.PasswordReset).Methods(http.MethodPost)
+
+	mailR := api.PathPrefix("/verify").Methods(http.MethodGet).Subrouter()
+	mailR.HandleFunc("/mail", authHandler.VerifyMail)
+	mailR.HandleFunc("/passwordReset", authHandler.VerifyPasswordReset)
+
+	trailersR := api.PathPrefix("/trailers").Subrouter()
+	trailersR.HandleFunc("/data", authHandler.GetTrailerData).Methods(http.MethodGet)
+	trailersR.HandleFunc("/list", authHandler.GetTrailersList).Methods(http.MethodGet)
+	trailersR.HandleFunc("/add", authHandler.Add).Methods(http.MethodPost)
+
 	// api.HandleFunc("/file/{fileID}", GetFile).Methods(http.MethodGet)
 	// api.HandleFunc("/searchFile", SearchFile).Methods(http.MethodGet)
 

@@ -47,7 +47,7 @@
         <div class="row>">
           <div class="col-md-12">
             <div class="d-flex justify-content-center">
-              <h1 style="text-align:center" id="mainHeading">Profile information</h1>
+              <h1 style="text-align:center" id="mainHeading">Trailers manager</h1>
             </div>
           </div>
         </div>
@@ -55,40 +55,25 @@
         <div class="row>">
           <div class="col-md-12">
             <div class="d-flex justify-content-center">
-                <h4> Username: </h4><p> {{.Username}} </p> <br/>
-                <h4>Email:</h4> <p> {{.Email}} </p>
-              <br />
+                <h4>Trailers list:</h4>
+                <br />
+
+                <div id="trailersList"></div>
             </div>
           </div>
         </div>
-        <h4>Change password</h4>
         <div class="row">
           <div class="col-md-12">
             <div class="d-flex justify-content-center">
-              <form action="/makeChangePasswordRequest" class="d-flex" method="POST">
+            <h4>Add a new trailer</h4>
+            <br/>
+              <form action="/trailers/makeAddRequest" class="d-flex" method="POST">
                   <div class="form-group">
-                      <input type="password" class="form-control form-control-lg mb-3" name="password"
-                          placeholder="Enter a password">
-                      <input type="password" class="form-control form-control-lg mb-3" name="passwordRepeated"
-                          placeholder="Repeat password">
-                      <input class="btn btn-warning btn-lg " type="submit" value="Change Password" id="changePasswordButton">
-                  </div>
-              </form>
-              <br />
-          </div>
-          </div>
-        </div>
-        <h4>Delete account</h4>
-        <div class="row">
-          <div class="col-md-12">
-            <div class="d-flex justify-content-center">
-              <form action="/makeDeleteAccountRequest" class="d-flex" method="POST">
-                  <div class="form-group">
-                      <input type="password" class="form-control form-control-lg mb-3" name="password"
-                          placeholder="Enter a password">
-                      <input type="password" class="form-control form-control-lg mb-3" name="passwordRepeated"
-                          placeholder="Repeat password">
-                      <input class="btn btn-warning btn-lg " type="submit" value="Delete account" id="deleteAccountButton">
+                      <input type="text" class="form-control form-control-lg mb-3" name="trailerNumber"
+                          placeholder="License plate number">
+                      <input type="text" class="form-control form-control-lg mb-3" name="trailerName"
+                          placeholder="Display name">
+                      <input class="btn btn-warning btn-lg " type="submit" value="Add" id="addTrailerButton">
                   </div>
               </form>
               <br />
@@ -102,6 +87,32 @@
       </footer>
     </div>
   </div>
+  <script type="text/javascript">
+    // var trailerData =  "{{.Array}}";
+    // console.log(trailerData[0]);
+    // console.log(trailerData.length);
+    var jsonStr = "{{.jsonData}}";
+    let trailers = JSON.parse(jsonStr);
+
+    (function(){
+        var ul = document.createElement('ul');
+        ul.setAttribute('id','trailersList');
+
+        document.getElementById('trailersList').appendChild(ul);
+        trailers.forEach(renderTrailersList);
+
+        function renderTrailersList(element, index, arr) {
+            var li = document.createElement('li');
+            li.setAttribute('class','item');
+
+            ul.appendChild(li);
+
+            li.innerHTML=li.innerHTML + element.Number + " " + element.Name;
+        }
+    })();
+
+    console.log(trailers);
+  </script>
   <!--Bootstrap JS-->
   <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
     integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"

@@ -7,7 +7,7 @@ import (
 
 var tpl *template.Template
 
-//go:embed templates/*.html
+//go:embed templates/*
 var templatesData embed.FS
 
 func init() {

@@ -42,6 +42,12 @@
                           <form action="/register" id="registerForm" class="d-flex" method="GET">
                             <button id="registerBtn" class="btn btn-warning" type="submit">Register</button>
                           </form>
+                          <form action="/trailers/manager" id="trailersManagerForm" class="d-flex" method="GET">
+                            <button id="trailersManagerBtn" class="btn btn-warning" type="submit">Trailers manager</button>
+                          </form>
+                          <form action="/account" id="accountForm" class="d-flex" method="GET">
+                            <button id="accountBtn" class="btn btn-warning" type="submit">Account</button>
+                          </form>
                           <form action="/logout" id="logoutForm" class="d-flex" method="POST">
                             <button id="logoutBtn" class="btn btn-warning" type="submit">Logout</button>
                           </form>
@@ -72,6 +78,8 @@
                                     <input class="btn btn-warning btn-lg " type="submit" value="Login" id="uploadButton">
                                 </div>
                             </form>
+                            <br/>
+                            <a href="http://localhost:8080/sendPasswordResetRequest">Forgot your password?</a>
                             <br />
                         </div>
                     </div>
@@ -89,20 +97,28 @@
         console.log(cookie);
 
         if(cookie === null || cookie === undefined) {
-        document.getElementById("loginForm").style.display="block";
-        document.getElementById("loginBtn").style.display="block";
-        document.getElementById("registerForm").style.display="block";
-        document.getElementById("registerBtn").style.display="block";
-        document.getElementById("logoutForm").style.display="none";
-        document.getElementById("logoutBtn").style.display="none";
-        } else {
-        document.getElementById("loginForm").style.display="none";
-        document.getElementById("loginBtn").style.display="none";
-        document.getElementById("registerForm").style.display="none";
-        document.getElementById("registerBtn").style.display="none";
-        document.getElementById("logoutForm").style.display="none";
-        document.getElementById("logoutBtn").style.display="block";
-        }
+      document.getElementById("loginForm").style.display="block";
+      document.getElementById("loginBtn").style.display="block";
+      document.getElementById("registerForm").style.display="block";
+      document.getElementById("registerBtn").style.display="block";
+      document.getElementById("logoutForm").style.display="none";
+      document.getElementById("logoutBtn").style.display="none";
+      document.getElementById("accountForm").style.display="none";
+      document.getElementById("accountBtn").style.display="none";
+      document.getElementById("trailersManagerForm").style.display="none";
+      document.getElementById("trailersManagerBtn").style.display="none";
+    } else {
+      document.getElementById("loginForm").style.display="none";
+      document.getElementById("loginBtn").style.display="none";
+      document.getElementById("registerForm").style.display="none";
+      document.getElementById("registerBtn").style.display="none";
+      document.getElementById("logoutForm").style.display="block";
+      document.getElementById("logoutBtn").style.display="block";
+      document.getElementById("accountForm").style.display="block";
+      document.getElementById("accountBtn").style.display="block";
+      document.getElementById("trailersManagerForm").style.display="block";
+      document.getElementById("trailersManagerBtn").style.display="block";
+    }
     </script>
 
     <!--Bootstrap JS-->

@@ -9,7 +9,10 @@ import (
 
 	// "fmt" has methods for formatted I/O operations (like printing to the console)
 	"TrailersWebApp/server/src"
+	"encoding/json"
 	"fmt"
+	"strings"
+	"time"
 
 	// The "net/http" library has methods to implement HTTP clients and servers
 	"net/http"
@@ -19,9 +22,43 @@ import (
 
 var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 	fmt.Printf("Message %s received on topic %s\n", msg.Payload(), msg.Topic())
+
+	var trailerDataMqtt src.TrailerDataMqtt
+	err := json.Unmarshal(msg.Payload(), &trailerDataMqtt)
+	if err != nil {
+		print("Invalid trailers data")
+		return
+	}
+	//fmt.Printf("%f %f\n", trailerData.Latt, trailerData.Longt)
+
 	db := src.ConnectToDb()
 	defer db.Close()
-	src.SendMqttMessageToDb(db, string(msg.Payload()), string(msg.Topic()))
+
+	var trailerData src.TrailerData
+	trailerData.Latt = trailerDataMqtt.Latt
+	trailerData.Longt = trailerDataMqtt.Longt
+	if trailerDataMqtt.GpsTime == " : : " {
+		trailerData.GpsTime = time.Unix(0, 0)
+	} else {
+		trailerData.GpsTime, err = time.Parse("15:04:05", trailerDataMqtt.GpsTime)
+	}
+	if err != nil {
+		fmt.Println(err)
+	}
+	//layout := "2022-10-22T17:48:22.592467"
+	trailerData.OsTime, err = time.Parse(time.RFC3339, strings.Split(trailerDataMqtt.OsTime, "Z")[0]+"Z")
+	//trailerData.OsTime, err = time.Parse(time.RFC3339, trailerDataMqtt.OsTime)
+	if err != nil {
+		fmt.Println(err)
+	}
+	trailerData.Weight = trailerDataMqtt.Weight
+	trailerData.WeightStatus = trailerDataMqtt.WeightStatus
+	trailerData.ShuntVoltage = trailerDataMqtt.ShuntVoltage
+	trailerData.PowerSupplyVoltage = trailerDataMqtt.PowerSupplyVoltage
+	trailerData.SerialNumber = "123"
+
+	//src.SendMqttMessageToDb(db, string(msg.Payload()), string(msg.Topic()))
+	src.InsertTrailerDataIntoDb(db, trailerData)
 }
 
 var connectHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
@@ -33,6 +70,9 @@ var connectionLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, 
 }
 
 func main() {
+
+	//mail = src.Mail()
+
 	var broker = "tcp://192.168.1.50:1883"
 	options := mqtt.NewClientOptions()
 	options.AddBroker(broker)
