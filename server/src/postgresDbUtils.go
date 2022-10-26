@@ -137,21 +137,21 @@ func SendMqttMessageToDb(db *sql.DB, mqttMessage string, mqttTopic string) error
 // 	return account, nil
 // }
 
-func GetTrailerFromDb(db *sql.DB, serialNumber string) error {
-	query := "SELECT id, number, name, user_id, serial, password FROM \"Users\" WHERE email = $1"
-	row := db.QueryRow(query, email)
+// func GetTrailerFromDb(db *sql.DB, serialNumber string) error {
+// 	query := "SELECT id, number, name, user_id, serial, password FROM \"Users\" WHERE serial_number = $1"
+// 	row := db.QueryRow(query, serialNumber)
 
-	var user User
-	err := row.Scan(&user.Id, &user.Username, &user.IsVerified, &user.CreatedAt, &user.UpdatedAt, &user.Password)
-	if err != nil {
-		fmt.Println("Error executing select statement")
-		return User{}, err
-	}
+// 	var user User
+// 	err := row.Scan(&user.Id, &user.Username, &user.IsVerified, &user.CreatedAt, &user.UpdatedAt, &user.Password)
+// 	if err != nil {
+// 		fmt.Println("Error executing select statement")
+// 		return User{}, err
+// 	}
 
-	user.Email = email
+// 	user.Email = email
 
-	return user, nil
-}
+// 	return user, nil
+// }
 
 func InsertTrailerDataIntoDb(db *sql.DB, trailerData TrailerData) error {
 	print(trailerData.Latt)

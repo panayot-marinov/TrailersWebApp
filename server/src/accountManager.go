@@ -8,11 +8,22 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/hashicorp/go-hclog"
 )
 
 var sessions = map[string]Session{}
 
-func Welcome(w http.ResponseWriter, r *http.Request) (bool, string, Session, *http.Cookie) {
+type AuthHandler struct {
+	mailService *SGMailService
+	logger      hclog.Logger
+}
+
+// NewAuthHandler returns a new instance of AuthHandler
+func NewAuthHandler(mailService *SGMailService, logger hclog.Logger) *AuthHandler {
+	return &AuthHandler{mailService, logger}
+}
+
+func (authHandler *AuthHandler) Welcome(w http.ResponseWriter, r *http.Request) (bool, string, Session, *http.Cookie) {
 	// We can obtain the session token from the requests cookies, which come with every request
 	c, err := r.Cookie("session_token")
 	if err != nil {
@@ -46,7 +57,7 @@ func Welcome(w http.ResponseWriter, r *http.Request) (bool, string, Session, *ht
 	// an unauthorized status
 	if userSession.isExpired() {
 		print("user session expired\n")
-		sessionToken, userSession, _ = Refresh(w, r)
+		sessionToken, userSession, _ = authHandler.Refresh(w, r)
 		//delete(sessions, sessionToken)
 		//w.WriteHeader(http.StatusUnauthorized)
 		//return false, "", userSession
@@ -57,9 +68,9 @@ func Welcome(w http.ResponseWriter, r *http.Request) (bool, string, Session, *ht
 	//w.Write([]byte(fmt.Sprintf("Welcome %s!", userSession.username)))
 }
 
-func Refresh(w http.ResponseWriter, r *http.Request) (string, Session, *http.Cookie) {
+func (authHandler *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) (string, Session, *http.Cookie) {
 	// (BEGIN) The code from this point is the same as the first part of the `Welcome` route
-	sessionGotSuccessfully, sessionToken, userSession, _ := Welcome(w, r)
+	sessionGotSuccessfully, sessionToken, userSession, _ := authHandler.Welcome(w, r)
 	if !sessionGotSuccessfully {
 		print("session not got successfully\n")
 		return "", userSession, &http.Cookie{
@@ -95,8 +106,8 @@ func Refresh(w http.ResponseWriter, r *http.Request) (string, Session, *http.Coo
 	return newSessionToken, newSession, newCookie
 }
 
-func CheckCookie(w http.ResponseWriter, r *http.Request) (bool, Session, *http.Cookie) {
-	sessionGotSuccessfully, sessionToken, userSession, cookie := Welcome(w, r)
+func (authHandler *AuthHandler) CheckCookie(w http.ResponseWriter, r *http.Request) (bool, Session, *http.Cookie) {
+	sessionGotSuccessfully, sessionToken, userSession, cookie := authHandler.Welcome(w, r)
 	if !sessionGotSuccessfully && userSession.expiry.Equal(time.Unix(0, 0)) {
 		print("cookie invalid\n")
 		return false, Session{
@@ -111,7 +122,7 @@ func CheckCookie(w http.ResponseWriter, r *http.Request) (bool, Session, *http.C
 	return true, userSession, cookie
 }
 
-func Login(w http.ResponseWriter, r *http.Request) {
+func (authHandler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
@@ -164,7 +175,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	print("Logged in")
 }
 
-func Register(w http.ResponseWriter, r *http.Request) {
+func (authHandler *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		//destUrl := "http://localhost:8080/"
 		w.WriteHeader(http.StatusUnauthorized)
@@ -179,15 +190,35 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	password := r.FormValue("password")
 	hashedPassword := hashSha256(password)
 
-	err := RegisterNewAccountToDb(db, username, email, password, string(hashedPassword))
+	now := time.Now()
+
+	user := User{
+		Username:   username,
+		Email:      email,
+		Password:   hashedPassword,
+		IsVerified: false,
+		CreatedAt:  now,
+		UpdatedAt:  now,
+	}
+
+	err := RegisterNewAccountToDb(db, user)
 	if err != nil {
 		fmt.Println("Error executing insert statement")
+		print(err)
+		print("\n")
 		w.WriteHeader(http.StatusUnauthorized)
+		panic(err)
+	}
+
+	err = authHandler.SendVerificationMail(db, user)
+	if err != nil {
+		fmt.Println("Error sending verification email")
+		w.WriteHeader(http.StatusInternalServerError)
 		panic(err)
 	}
 }
 
-func Logout(w http.ResponseWriter, r *http.Request) {
+func (authHandler *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	print("0\n")
 	prevUrl := r.Header.Get("Referer")
 	if r.Method != "POST" {
@@ -238,11 +269,11 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func GetAccountInfo(w http.ResponseWriter, r *http.Request) {
+func (authHandler *AuthHandler) GetAccountInfo(w http.ResponseWriter, r *http.Request) {
 	print("a0\n")
 	prevUrl := r.Header.Get("Referer")
 
-	hasValidData, session, _ := CheckCookie(w, r)
+	hasValidData, session, _ := authHandler.CheckCookie(w, r)
 	if !hasValidData {
 		w.WriteHeader(http.StatusUnauthorized)
 		http.Redirect(w, r, prevUrl, http.StatusUnauthorized)
@@ -281,7 +312,7 @@ func GetAccountInfo(w http.ResponseWriter, r *http.Request) {
 	print("a5\n")
 }
 
-func ChangePassword(w http.ResponseWriter, r *http.Request) {
+func (authHandler *AuthHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	prevUrl := r.Header.Get("Referer")
 
 	password := r.FormValue("password")
@@ -295,7 +326,7 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hasValidData, session, _ := CheckCookie(w, r)
+	hasValidData, session, _ := authHandler.CheckCookie(w, r)
 	if !hasValidData {
 		print("no valid data changing password")
 		w.WriteHeader(http.StatusUnauthorized)
@@ -310,7 +341,128 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 	err := UpdateAccountPasswordToDb(db, session.username, string(hashedPassword))
 	if err != nil {
 		fmt.Println("Error executing insert statement")
+		w.WriteHeader(http.StatusInternalServerError)
+		panic(err)
+	}
+}
+
+func (authHandler *AuthHandler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
+	prevUrl := r.Header.Get("Referer")
+
+	password := r.FormValue("password")
+	passwordRepeated := r.FormValue("passwordRepeated")
+
+	print("password " + password + " passwordRepeated " + passwordRepeated + "\n")
+
+	if password != passwordRepeated {
+		w.WriteHeader(http.StatusBadRequest)
+		http.Redirect(w, r, prevUrl, http.StatusBadRequest)
+		return
+	}
+
+	hasValidData, session, _ := authHandler.CheckCookie(w, r)
+	if !hasValidData {
+		print("no valid data changing password")
 		w.WriteHeader(http.StatusUnauthorized)
+		http.Redirect(w, r, prevUrl, http.StatusUnauthorized)
+		return
+	}
+
+	db := ConnectToDb()
+	defer db.Close()
+
+	account, err := GetAccountInfoFromDb(db, session.username)
+	account.Username = session.username
+	if err != nil {
+		print("a3\n")
+		w.WriteHeader(http.StatusBadRequest)
+		http.Redirect(w, r, prevUrl, http.StatusInternalServerError)
+		return
+	}
+	err = DeleteVerificationDataFromDb(db, account.Email, MailConfirmation)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		http.Redirect(w, r, prevUrl, http.StatusInternalServerError)
+		return
+	}
+	err = DeleteVerificationDataFromDb(db, account.Email, PassReset)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		http.Redirect(w, r, prevUrl, http.StatusInternalServerError)
+		return
+	}
+
+	err = DeleteAccountFromDb(db, session.username)
+	if err != nil {
+		fmt.Println("Error executing delete statement")
+		w.WriteHeader(http.StatusInternalServerError)
+		panic(err)
+	}
+}
+
+func (authHandler *AuthHandler) PasswordReset(w http.ResponseWriter, r *http.Request) {
+	prevUrl := r.Header.Get("Referer")
+
+	username := r.FormValue("username")
+	code := r.FormValue("code")
+	password := r.FormValue("password")
+	passwordRepeated := r.FormValue("passwordRepeated")
+
+	print("username " + username + "code" + code + " password " + password + " passwordRepeated " + passwordRepeated + "\n")
+
+	if password != passwordRepeated {
+		w.WriteHeader(http.StatusBadRequest)
+		http.Redirect(w, r, prevUrl, http.StatusBadRequest)
+		return
+	}
+
+	hashedPassword := hashSha256(password)
+
+	db := ConnectToDb()
+	defer db.Close()
+
+	account, err := GetAccountInfoFromDb(db, username)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Redirect(w, r, prevUrl, http.StatusInternalServerError)
+		return
+	}
+
+	var verificationData VerificationData
+	verificationData.Email = account.Email
+	verificationData.Code = code
+
+	actualVerificationData, err := GetVerificationDataFromDb(db, account.Email)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Redirect(w, r, prevUrl, http.StatusInternalServerError)
+		return
+	}
+
+	valid, err := authHandler.Verify(db, &actualVerificationData, &verificationData)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Redirect(w, r, prevUrl, http.StatusInternalServerError)
+		return
+	}
+
+	if !valid {
+		w.WriteHeader(http.StatusBadRequest)
+		http.Redirect(w, r, prevUrl, http.StatusBadRequest)
+		return
+	}
+
+	err = DeleteVerificationDataFromDb(db, account.Email, PassReset)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		http.Redirect(w, r, prevUrl, http.StatusInternalServerError)
+		return
+	}
+
+	err = UpdateAccountPasswordToDb(db, username, string(hashedPassword))
+	if err != nil {
+		fmt.Println("Error executing insert statement")
+		w.WriteHeader(http.StatusInternalServerError)
 		panic(err)
 	}
 }
