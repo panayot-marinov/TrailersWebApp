@@ -137,29 +137,20 @@ func SendMqttMessageToDb(db *sql.DB, mqttMessage string, mqttTopic string) error
 // 	return account, nil
 // }
 
-func GetTrailerDataFromDb(db *sql.DB, serialNumber string) error {
-	print(trailerData.Latt)
-	print("\n")
-	print(trailerData.Longt)
-	print("\n")
-	print(trailerData.Weight)
-	print("\n")
-	print(trailerData.WeightStatus)
-	print("\n")
-	print(trailerData.ShuntVoltage)
-	print("\n")
-	print(trailerData.PowerSupplyVoltage)
-	print("\n")
-	query := "INSERT INTO \"TrailersData\" (lattitude, longtitude, gps_time, os_time, weight, weight_status, shunt_voltage, power_supply_voltage, trailer_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"
-	_, err := db.Exec(query, trailerData.Latt, trailerData.Longt, trailerData.GpsTime, trailerData.OsTime, trailerData.Weight,
-		trailerData.WeightStatus, trailerData.ShuntVoltage, trailerData.PowerSupplyVoltage)
+func GetTrailerFromDb(db *sql.DB, serialNumber string) error {
+	query := "SELECT id, number, name, user_id, serial, password FROM \"Users\" WHERE email = $1"
+	row := db.QueryRow(query, email)
+
+	var user User
+	err := row.Scan(&user.Id, &user.Username, &user.IsVerified, &user.CreatedAt, &user.UpdatedAt, &user.Password)
 	if err != nil {
-		fmt.Println(err)
-		fmt.Println("Error executing insert statement")
-		return err
+		fmt.Println("Error executing select statement")
+		return User{}, err
 	}
 
-	return nil
+	user.Email = email
+
+	return user, nil
 }
 
 func InsertTrailerDataIntoDb(db *sql.DB, trailerData TrailerData) error {
