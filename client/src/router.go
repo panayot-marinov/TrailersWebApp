@@ -1,6 +1,8 @@
 package src
 
 import (
+	"html/template"
+	"io"
 	"log"
 	"net/http"
 
@@ -23,6 +25,11 @@ func SetupRoutes() {
 	r.HandleFunc("/passwordReset", PasswordReset).Methods(http.MethodGet)
 	r.HandleFunc("/makePasswordResetRequest", MakePasswordResetRequest).Methods(http.MethodPost)
 
+	r.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/",
+		http.FileServer(http.Dir("./src/templates/assets"))))
+	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/",
+		http.FileServer(http.Dir("./src/templates/static"))))
+
 	mailR := r.PathPrefix("/verify").Methods(http.MethodGet).Subrouter()
 	mailR.HandleFunc("/mail", VerifyMail)
 	//mailR.HandleFunc("/password-reset", VerifyPasswordReset)
@@ -36,12 +43,73 @@ func SetupRoutes() {
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
 
+// func Get(w http.ResponseWriter, r *http.Request) {
+// 	//w.Header().Set("Content-type", "application/json")
+// 	w.Header().Set("Content-type", "text/html")
+// 	w.WriteHeader(http.StatusOK)
+// 	//w.Write([]byte(`{"message": "get called"}`))
+// 	print("In index\n")
+
+// 	tpl.ExecuteTemplate(w, "index.html", nil) //Read about nginx
+// }
+
 func Get(w http.ResponseWriter, r *http.Request) {
-	//w.Header().Set("Content-type", "application/json")
+	print("aa0")
+	client := &http.Client{}
+	req, err := http.NewRequest(http.MethodGet, "http://localhost:8081/api/v1/trailers/data", nil)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		tpl.ExecuteTemplate(w, "index.html", nil)
+		return
+	}
+
+	print("aa1")
+	cookie, err := r.Cookie("session_token")
+	if err != nil {
+		print("cannot get cookie\n")
+		w.WriteHeader(http.StatusInternalServerError)
+		tpl.ExecuteTemplate(w, "index.html", nil)
+		return
+	}
+	req.AddCookie(cookie)
+	resp, err := client.Do(req)
+	print("code=")
+	print(resp.StatusCode)
+	print("aa2")
+	if err != nil {
+		print("cannot call api\n")
+		w.WriteHeader(http.StatusInternalServerError)
+		tpl.ExecuteTemplate(w, "index.html", nil)
+		return
+	}
+	print("aa3")
+	// decoder := json.NewDecoder(resp.Body)
+
+	defer resp.Body.Close()
+
+	// var trailerData []TrailerData
+	// err = decoder.Decode(&trailerData)
+	// print("aa4")
+	// // print(account.Username)
+	// // print(account.Email)
+	// if err != nil {
+	// 	print("aa5")
+	// 	w.WriteHeader(http.StatusBadRequest)
+	// 	tpl.ExecuteTemplate(w, "trailersData.html", nil)
+	// 	return
+	// }
+
+	//Array := [5]int{1, 2, 3, 4, 5}
+
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		print("aa6")
+		w.WriteHeader(http.StatusBadRequest)
+		tpl.ExecuteTemplate(w, "index.html", nil)
+		return
+	}
+
 	w.Header().Set("Content-type", "text/html")
 	w.WriteHeader(http.StatusOK)
-	//w.Write([]byte(`{"message": "get called"}`))
-	print("In index\n")
-
-	tpl.ExecuteTemplate(w, "index.html", nil) //Read about nginx
+	tpl.ExecuteTemplate(w, "index.html", template.FuncMap{"jsonData": string(b[:])})
 }
