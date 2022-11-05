@@ -80,24 +80,26 @@ func Register(w http.ResponseWriter, r *http.Request) {
 }
 
 func MakeRegisterRequest(w http.ResponseWriter, r *http.Request) {
-	username := r.FormValue("username")
-	email := r.FormValue("email")
-	password := r.FormValue("password")
+	var user User
+	user.Company = r.FormValue("company")
+	user.Username = r.FormValue("username")
+	user.Email = r.FormValue("email")
+	user.Password = r.FormValue("password")
 
 	params := url.Values{}
-	params.Add("username", username)
-	params.Add("email", email)
-	params.Add("password", password)
-	resp, _ := http.PostForm("http://localhost:8081/api/v1/register",
-		params)
+	params.Add("company", user.Company)
+	params.Add("username", user.Username)
+	params.Add("email", user.Email)
+	params.Add("password", user.Password)
+	resp, _ := http.PostForm("http://localhost:8081/api/v1/register", params)
 
 	fmt.Println("respBody")
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body) // response body is []byte
 	fmt.Println(string(body))
 
-	destUrl := "http://localhost:8080/"
-	http.Redirect(w, r, destUrl, http.StatusFound)
+	w.WriteHeader(http.StatusOK)
+	tpl.ExecuteTemplate(w, "verifyYourEmail.html", template.FuncMap{"Email": user.Email})
 }
 
 func MakeLogoutRequest(w http.ResponseWriter, r *http.Request) {
@@ -115,7 +117,7 @@ func MakeLogoutRequest(w http.ResponseWriter, r *http.Request) {
 	jar, err := cookiejar.New(nil)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		http.Redirect(w, r, prevUrl, http.StatusInternalServerError)
+		tpl.ExecuteTemplate(w, "error500.html", nil)
 		return
 	}
 
@@ -162,43 +164,48 @@ func MakeLogoutRequest(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, destUrl, http.StatusSeeOther)
 }
 
-func AccountDetails(w http.ResponseWriter, r *http.Request) {
+func MyUserProfile(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "text/html")
-
-	client := &http.Client{}
-	req, err := http.NewRequest(http.MethodGet, "http://localhost:8081/api/v1/account", nil)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		tpl.ExecuteTemplate(w, "account.html", nil)
-		return
-	}
 
 	cookie, err := r.Cookie("session_token")
 	if err != nil {
 		print("cannot get cookie\n")
-		w.WriteHeader(http.StatusInternalServerError)
-		tpl.ExecuteTemplate(w, "account.html", nil)
+		destUrl := "http://localhost:8080/login"
+		http.Redirect(w, r, destUrl, http.StatusFound)
 		return
 	}
+
+	client := &http.Client{}
+	req, err := http.NewRequest(http.MethodGet, "http://localhost:8081/api/v1/userProfile", nil)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		tpl.ExecuteTemplate(w, "error500.html", nil)
+		return
+	}
+
 	req.AddCookie(cookie)
 	resp, err := client.Do(req)
 	if err != nil {
 		print("cannot call api\n")
 		w.WriteHeader(http.StatusInternalServerError)
-		tpl.ExecuteTemplate(w, "account.html", nil)
+		tpl.ExecuteTemplate(w, "error500.html", nil)
 		return
 	}
 	decoder := json.NewDecoder(resp.Body)
 
 	defer resp.Body.Close()
 
-	var account Account
-	err = decoder.Decode(&account)
-	print(account.Username)
-	print(account.Email)
+	var user User
+	err = decoder.Decode(&user)
+	print("username=")
+	print(user.Username)
+	print("email=")
+	print(user.Email)
+	print("company=")
+	print(user.Company)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		tpl.ExecuteTemplate(w, "account.html", nil)
+		tpl.ExecuteTemplate(w, "myUserProfile.html", nil)
 		return
 	}
 
@@ -225,11 +232,9 @@ func AccountDetails(w http.ResponseWriter, r *http.Request) {
 	// }
 
 	w.WriteHeader(http.StatusOK)
-	params := url.Values{}
-	params.Add("username", account.Username)
-	params.Add("email", account.Email)
 
-	tpl.ExecuteTemplate(w, "account.html", account)
+	tpl.ExecuteTemplate(w, "myUserProfile.html",
+		template.FuncMap{"Username": user.Username, "Email": user.Email, "Company": user.Company})
 }
 
 func MakeChangePasswordRequest(w http.ResponseWriter, r *http.Request) {
@@ -245,7 +250,7 @@ func MakeChangePasswordRequest(w http.ResponseWriter, r *http.Request) {
 	req, err := http.NewRequest(http.MethodPost, "http://localhost:8081/api/v1/changePassword", strings.NewReader(params.Encode()))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		tpl.ExecuteTemplate(w, "account.html", nil)
+		tpl.ExecuteTemplate(w, "error500.html", nil)
 		return
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -254,7 +259,7 @@ func MakeChangePasswordRequest(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		print("cannot get cookie\n")
 		w.WriteHeader(http.StatusInternalServerError)
-		tpl.ExecuteTemplate(w, "account.html", nil)
+		tpl.ExecuteTemplate(w, "error500.html", nil)
 		return
 	}
 
@@ -263,7 +268,7 @@ func MakeChangePasswordRequest(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		print("cannot call api\n")
 		w.WriteHeader(http.StatusInternalServerError)
-		tpl.ExecuteTemplate(w, "account.html", nil)
+		tpl.ExecuteTemplate(w, "error500.html", nil)
 		return
 	}
 	print("request made successfully\n")
@@ -319,7 +324,7 @@ func MakeDeleteAccountRequest(w http.ResponseWriter, r *http.Request) {
 	req, err := http.NewRequest(http.MethodPost, "http://localhost:8081/api/v1/deleteAccount", strings.NewReader(params.Encode()))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		tpl.ExecuteTemplate(w, "account.html", nil)
+		tpl.ExecuteTemplate(w, "error500.html", nil)
 		return
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -328,7 +333,7 @@ func MakeDeleteAccountRequest(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		print("cannot get cookie\n")
 		w.WriteHeader(http.StatusInternalServerError)
-		tpl.ExecuteTemplate(w, "account.html", nil)
+		tpl.ExecuteTemplate(w, "error500.html", nil)
 		return
 	}
 
@@ -337,7 +342,7 @@ func MakeDeleteAccountRequest(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		print("cannot call api\n")
 		w.WriteHeader(http.StatusInternalServerError)
-		tpl.ExecuteTemplate(w, "account.html", nil)
+		tpl.ExecuteTemplate(w, "error500.html", nil)
 		return
 	}
 	print("request made successfully\n")
@@ -400,7 +405,7 @@ func MakePasswordResetSendEmailRequest(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		print("1")
-		tpl.ExecuteTemplate(w, "index.html", nil)
+		tpl.ExecuteTemplate(w, "error500.html", nil)
 		return
 	}
 
@@ -408,7 +413,7 @@ func MakePasswordResetSendEmailRequest(w http.ResponseWriter, r *http.Request) {
 	if err != nil || resp.StatusCode != http.StatusAccepted {
 		print("cannot call api correctly\n")
 		w.WriteHeader(http.StatusInternalServerError)
-		tpl.ExecuteTemplate(w, "index.html", nil)
+		tpl.ExecuteTemplate(w, "error500.html", nil)
 		return
 	}
 
@@ -432,7 +437,7 @@ func PasswordReset(w http.ResponseWriter, r *http.Request) {
 	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		tpl.ExecuteTemplate(w, "index.html", nil)
+		tpl.ExecuteTemplate(w, "error500.html", nil)
 		return
 	}
 
@@ -442,7 +447,7 @@ func PasswordReset(w http.ResponseWriter, r *http.Request) {
 		print(1)
 		print("cannot call api correctly\n")
 		w.WriteHeader(http.StatusInternalServerError)
-		tpl.ExecuteTemplate(w, "index.html", nil)
+		tpl.ExecuteTemplate(w, "error500.html", nil)
 		return
 	}
 
@@ -474,7 +479,7 @@ func MakePasswordResetRequest(w http.ResponseWriter, r *http.Request) {
 	print("aa")
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		tpl.ExecuteTemplate(w, "index.html", nil)
+		tpl.ExecuteTemplate(w, "error500.html", nil)
 		return
 	}
 	defer resp.Body.Close()

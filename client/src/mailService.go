@@ -20,21 +20,20 @@ func VerifyMail(w http.ResponseWriter, r *http.Request) {
 	client := &http.Client{}
 	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		tpl.ExecuteTemplate(w, "index.html", nil)
+		w.WriteHeader(http.StatusOK)
+		tpl.ExecuteTemplate(w, "cannotVerifyEmail.html", nil)
 		return
 	}
 
 	resp, err := client.Do(req)
 	if err != nil || resp.StatusCode != http.StatusAccepted {
 		print("cannot call api correctly\n")
-		w.WriteHeader(http.StatusInternalServerError)
-		tpl.ExecuteTemplate(w, "index.html", nil)
+		w.WriteHeader(http.StatusOK)
+		tpl.ExecuteTemplate(w, "cannotVerifyEmail.html", nil)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-
 	tpl.ExecuteTemplate(w, "accountVerified.html", nil)
 }
 
@@ -55,7 +54,7 @@ func VerifyPasswordReset(w http.ResponseWriter, r *http.Request) {
 	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		tpl.ExecuteTemplate(w, "index.html", nil)
+		tpl.ExecuteTemplate(w, "error500.html", nil)
 		return
 	}
 
@@ -63,7 +62,7 @@ func VerifyPasswordReset(w http.ResponseWriter, r *http.Request) {
 	if err != nil || resp.StatusCode != http.StatusAccepted {
 		print("cannot call api correctly\n")
 		w.WriteHeader(http.StatusInternalServerError)
-		tpl.ExecuteTemplate(w, "index.html", nil)
+		tpl.ExecuteTemplate(w, "error500.html", nil)
 		return
 	}
 
