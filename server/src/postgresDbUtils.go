@@ -29,11 +29,11 @@ func GetAccountInfoFromDb(db *sql.DB, username string) (Account, error) {
 }
 
 func GetUserInfoFromDbWithUsername(db *sql.DB, username string) (User, error) {
-	query := "SELECT id, email, is_verified, created_at, updated_at, password FROM \"Users\" WHERE username = $1"
+	query := "SELECT id, email, company, is_verified, created_at, updated_at, password FROM \"Users\" WHERE username = $1"
 	row := db.QueryRow(query, username)
 
 	var user User
-	err := row.Scan(&user.Id, &user.Email, &user.IsVerified, &user.CreatedAt, &user.UpdatedAt, &user.Password)
+	err := row.Scan(&user.Id, &user.Email, &user.Company, &user.IsVerified, &user.CreatedAt, &user.UpdatedAt, &user.Password)
 	if err != nil {
 		fmt.Println("Error executing select statement")
 		return User{}, err
@@ -45,11 +45,11 @@ func GetUserInfoFromDbWithUsername(db *sql.DB, username string) (User, error) {
 }
 
 func GetUserInfoFromDbWithEmail(db *sql.DB, email string) (User, error) {
-	query := "SELECT id, username, is_verified, created_at, updated_at, password FROM \"Users\" WHERE email = $1"
+	query := "SELECT id, username, company, is_verified, created_at, updated_at, password FROM \"Users\" WHERE email = $1"
 	row := db.QueryRow(query, email)
 
 	var user User
-	err := row.Scan(&user.Id, &user.Username, &user.IsVerified, &user.CreatedAt, &user.UpdatedAt, &user.Password)
+	err := row.Scan(&user.Id, &user.Username, &user.Company, &user.IsVerified, &user.CreatedAt, &user.UpdatedAt, &user.Password)
 	if err != nil {
 		fmt.Println("Error executing select statement")
 		return User{}, err
@@ -61,14 +61,8 @@ func GetUserInfoFromDbWithEmail(db *sql.DB, email string) (User, error) {
 }
 
 func RegisterNewAccountToDb(db *sql.DB, user User) error {
-	query := "INSERT INTO \"Users\" (username, email, password, is_verified, updated_at, created_at) VALUES ($1, $2, $3, $4, $5, $6)"
-	fmt.Println(user.Username)
-	fmt.Println(user.Email)
-	fmt.Println(user.Password)
-	fmt.Println(user.IsVerified)
-	fmt.Println(user.CreatedAt)
-	fmt.Println(user.UpdatedAt)
-	_, err := db.Exec(query, user.Username, user.Email, user.Password, user.IsVerified, user.UpdatedAt, user.CreatedAt)
+	query := "INSERT INTO \"Users\" (username, email, password, company, is_verified, updated_at, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7)"
+	_, err := db.Exec(query, user.Username, user.Email, user.Password, user.Company, user.IsVerified, user.UpdatedAt, user.CreatedAt)
 	if err != nil {
 		fmt.Println("Error executing insert statement")
 		print(err)

@@ -27,7 +27,7 @@ func SetupRoutes() {
 	api.HandleFunc("/login", authHandler.Login).Methods(http.MethodPost)
 	api.HandleFunc("/register", authHandler.Register).Methods(http.MethodPost)
 	api.HandleFunc("/logout", authHandler.Logout).Methods(http.MethodPost)
-	api.HandleFunc("/account", authHandler.GetAccountInfo).Methods(http.MethodGet)
+	api.HandleFunc("/userProfile", authHandler.GetUserProfileInfo).Methods(http.MethodGet)
 	api.HandleFunc("/changePassword", authHandler.ChangePassword).Methods(http.MethodPost)
 	api.HandleFunc("/deleteAccount", authHandler.DeleteAccount).Methods(http.MethodPost)
 	api.HandleFunc("/generatePasswordResetCode", authHandler.GeneratePasswordResetCode).Methods(http.MethodGet)

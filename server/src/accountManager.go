@@ -185,6 +185,7 @@ func (authHandler *AuthHandler) Register(w http.ResponseWriter, r *http.Request)
 
 	db := ConnectToDb()
 	defer db.Close()
+	company := r.FormValue("company")
 	username := r.FormValue("username")
 	email := r.FormValue("email")
 	password := r.FormValue("password")
@@ -196,6 +197,7 @@ func (authHandler *AuthHandler) Register(w http.ResponseWriter, r *http.Request)
 		Username:   username,
 		Email:      email,
 		Password:   hashedPassword,
+		Company:    company,
 		IsVerified: false,
 		CreatedAt:  now,
 		UpdatedAt:  now,
@@ -269,7 +271,7 @@ func (authHandler *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (authHandler *AuthHandler) GetAccountInfo(w http.ResponseWriter, r *http.Request) {
+func (authHandler *AuthHandler) GetUserProfileInfo(w http.ResponseWriter, r *http.Request) {
 	print("a0\n")
 	prevUrl := r.Header.Get("Referer")
 
@@ -283,8 +285,8 @@ func (authHandler *AuthHandler) GetAccountInfo(w http.ResponseWriter, r *http.Re
 
 	db := ConnectToDb()
 	defer db.Close()
-	account, err := GetAccountInfoFromDb(db, session.username)
-	account.Username = session.username
+	user, err := GetUserInfoFromDbWithUsername(db, session.username)
+	user.Username = session.username
 	print("a2\n")
 	if err != nil {
 		print("a3\n")
@@ -293,13 +295,14 @@ func (authHandler *AuthHandler) GetAccountInfo(w http.ResponseWriter, r *http.Re
 		return
 	}
 	print("a4\n")
+	user.Password = nil
 
 	//w.Header().Set("Content-Type", "application/json")
 	//json.NewEncoder(w).Encode(account)
 
-	jData, err := json.Marshal(account)
-	print(account.Username)
-	print(account.Email)
+	jData, err := json.Marshal(user)
+	print(user.Username)
+	print(user.Email)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		http.Redirect(w, r, prevUrl, http.StatusInternalServerError)

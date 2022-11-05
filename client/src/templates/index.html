@@ -130,9 +130,9 @@
     <div class="container">
       <div class="navbar-nav-wrap">
         <!-- Logo -->
-        <a class="navbar-brand" href="../index.html" aria-label="Front">
-          <img class="navbar-brand-logo" src="static/images/trailersLogo.png" alt="Logo" data-hs-theme-appearance="default">
-          <img class="navbar-brand-logo" src="assets/svg/logos-light/logo.svg" alt="Logo" data-hs-theme-appearance="dark">
+        <a class="navbar-brand" href="./" aria-label="Front">
+          <img class="navbar-brand-logo" src="./static/images/trailersLogo.png" alt="Logo" data-hs-theme-appearance="default">
+          <img class="navbar-brand-logo" src="./static/images/trailersLogoDark.jpg" alt="Logo" data-hs-theme-appearance="dark">
         </a>
         <!-- End Logo -->
 
@@ -828,8 +828,8 @@
                         <img class="avatar-img" src="assets/img/160x160/img6.jpg" alt="Image Description">
                       </div>
                       <div class="flex-grow-1 ms-3">
-                        <h5 class="mb-0">Mark Williams</h5>
-                        <p class="card-text text-body">mark@site.com</p>
+                        <h5 class="mb-0">{{.Company}}</h5>
+                        <p class="card-text text-body">{{.Email}}</p>
                       </div>
                     </div>
                   </div>
@@ -902,7 +902,7 @@
 
                   <div class="dropdown-divider"></div>
 
-                  <a class="dropdown-item" href="#">Sign out</a>
+                  <a class="dropdown-item" href="/logout">Sign out</a>
                 </div>
               </div>
               <!-- End Account -->
@@ -986,11 +986,11 @@
                       </a>
 
                       <div id="navbarVerticalMenuPagesUserProfileMenu" class="nav-collapse collapse " data-bs-parent="#navbarVerticalMenuPagesMenu">
-                        <a class="nav-link " href="../user-profile.html">Profile</a>
+                        <a class="nav-link " href="./userProfile">Profile</a>
                         <a class="nav-link " href="../user-profile-teams.html">Teams</a>
                         <a class="nav-link " href="../user-profile-projects.html">Projects</a>
                         <a class="nav-link " href="../user-profile-connections.html">Connections</a>
-                        <a class="nav-link " href="/account">My Profile</a>
+                        <a class="nav-link " href="./myUserProfile">My Profile</a>
                       </div>
                     </div>
                     <!-- End Collapse -->
