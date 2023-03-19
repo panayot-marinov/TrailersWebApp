@@ -1,0 +1,22 @@
+# Database configuration
+dbConfiguration:
+  host: "192.168.1.50"
+  name: "MainDb"
+  user: "postgres"
+  pass: "panchoididi"
+  port: 5432
+  connectTimeout: 60
+  sslMode: "disable"
+
+# Mail API configuration
+mailApiConfiguration:
+  accessTokenPrivateKeyPath: ""
+  accessTokenPublicKeyPath: ""
+  refreshTokenPrivateKeyPath: "user"
+  refreshTokenPublicKeyPath: "super-pedro-1980"
+  jwtExpiration: 123
+  sendGridApiKey: ""
+  mailVerifCodeExpiration: 123
+  passResetCodeExpiration: 123
+  mailVerifTemplateID: aaa
+  passResetTemplateID: aaa

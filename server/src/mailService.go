@@ -78,13 +78,13 @@ type Mail struct {
 
 // SGMailService is the sendgrid implementation of our MailService.
 type SGMailService struct {
-	logger  hclog.Logger
-	configs Configurations
+	logger hclog.Logger
+	config Configuration
 }
 
 // NewSGMailService returns a new instance of SGMailService
-func NewSGMailService(logger hclog.Logger, configs Configurations) *SGMailService {
-	return &SGMailService{logger, configs}
+func NewSGMailService(logger hclog.Logger, config Configuration) *SGMailService {
+	return &SGMailService{logger, config}
 }
 
 // CreateMail takes in a mail request and constructs a sendgrid mail type.
@@ -96,9 +96,9 @@ func (ms *SGMailService) CreateMail(mailReq *Mail) []byte {
 	m.SetFrom(from)
 
 	if mailReq.mtype == MailConfirmation {
-		m.SetTemplateID(ms.configs.MailVerifTemplateID)
+		m.SetTemplateID(ms.config.MailApiConfig.MailVerifTemplateID)
 	} else if mailReq.mtype == PassReset {
-		m.SetTemplateID(ms.configs.PassResetTemplateID)
+		m.SetTemplateID(ms.config.MailApiConfig.PassResetTemplateID)
 	}
 
 	p := mail.NewPersonalization()
@@ -126,10 +126,10 @@ func (ms *SGMailService) SendMail(mailReq *Mail) error {
 	// plainTextContent := "and easy to do anywhere, even with Go"
 	// htmlContent := "<strong>and easy to do anywhere, even with Go</strong>"
 	// message := mail.NewSingleEmail(from, subject, to, plainTextContent, htmlContent)
-	// //client := sendgrid.NewSendClient(os.Getenv(ms.configs.SendGridApiKey))
-	// client := sendgrid.NewSendClient(ms.configs.SendGridApiKey)
+	// //client := sendgrid.NewSendClient(os.Getenv(ms.config.SendGridApiKey))
+	// client := sendgrid.NewSendClient(ms.config.SendGridApiKey)
 	// print("apikey =")
-	// print(ms.configs.SendGridApiKey)
+	// print(ms.config.SendGridApiKey)
 	// response, err := client.Send(message)
 	// if err != nil {
 	// 	ms.logger.Error("unable to send mail", "error", err)
@@ -141,7 +141,7 @@ func (ms *SGMailService) SendMail(mailReq *Mail) error {
 
 	// return err
 
-	request := sendgrid.GetRequest(ms.configs.SendGridApiKey, "/v3/mail/send", "https://api.sendgrid.com")
+	request := sendgrid.GetRequest(ms.config.MailApiConfig.SendGridApiKey, "/v3/mail/send", "https://api.sendgrid.com")
 	request.Method = "POST"
 	var Body = ms.CreateMail(mailReq)
 	request.Body = Body
@@ -214,7 +214,7 @@ func (authHandler *AuthHandler) VerifyMail(w http.ResponseWriter, r *http.Reques
 	print("username=")
 	print(username)
 
-	db := ConnectToDb()
+	db := ConnectToDb(authHandler.configuration.DbConfig)
 	defer db.Close()
 	account, err := GetAccountInfoFromDb(db, username)
 	if err != nil {
@@ -346,7 +346,7 @@ func (authHandler *AuthHandler) GeneratePasswordResetCode(w http.ResponseWriter,
 	print("email=")
 	print(email)
 
-	db := ConnectToDb()
+	db := ConnectToDb(authHandler.configuration.DbConfig)
 	defer db.Close()
 	user, err := GetUserInfoFromDbWithEmail(db, email)
 	if err != nil {
@@ -379,7 +379,7 @@ func (authHandler *AuthHandler) GeneratePasswordResetCode(w http.ResponseWriter,
 		Email:     user.Email,
 		Code:      mailData.Code,
 		Type:      PassReset,
-		ExpiresAt: time.Now().Add(time.Minute * time.Duration(authHandler.mailService.configs.PassResetCodeExpiration)),
+		ExpiresAt: time.Now().Add(time.Minute * time.Duration(authHandler.mailService.config.MailApiConfig.PassResetCodeExpiration)),
 	}
 
 	err = StoreVerificationData(db, *verificationData)
@@ -416,7 +416,7 @@ func (authHandler *AuthHandler) VerifyPasswordReset(w http.ResponseWriter, r *ht
 	verificationData.Type = PassReset
 	verificationData.Code = code
 
-	db := ConnectToDb()
+	db := ConnectToDb(authHandler.configuration.DbConfig)
 	defer db.Close()
 
 	account, err := GetAccountInfoFromDb(db, username)
@@ -462,7 +462,7 @@ func (authHandler *AuthHandler) SendPasswordResetEmail(w http.ResponseWriter, r 
 	print("email=")
 	print(email)
 
-	db := ConnectToDb()
+	db := ConnectToDb(authHandler.configuration.DbConfig)
 	defer db.Close()
 	user, err := GetUserInfoFromDbWithEmail(db, email)
 	if err != nil {

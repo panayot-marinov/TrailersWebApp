@@ -14,13 +14,14 @@ import (
 var sessions = map[string]Session{}
 
 type AuthHandler struct {
-	mailService *SGMailService
-	logger      hclog.Logger
+	mailService   *SGMailService
+	logger        hclog.Logger
+	configuration Configuration
 }
 
 // NewAuthHandler returns a new instance of AuthHandler
-func NewAuthHandler(mailService *SGMailService, logger hclog.Logger) *AuthHandler {
-	return &AuthHandler{mailService, logger}
+func NewAuthHandler(mailService *SGMailService, logger hclog.Logger, configuration Configuration) *AuthHandler {
+	return &AuthHandler{mailService, logger, configuration}
 }
 
 func (authHandler *AuthHandler) Welcome(w http.ResponseWriter, r *http.Request) (bool, string, Session, *http.Cookie) {
@@ -128,7 +129,7 @@ func (authHandler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db := ConnectToDb()
+	db := ConnectToDb(authHandler.configuration.DbConfig)
 	defer db.Close()
 	username := r.FormValue("username")
 	password := r.FormValue("password")
@@ -183,7 +184,7 @@ func (authHandler *AuthHandler) Register(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	db := ConnectToDb()
+	db := ConnectToDb(authHandler.configuration.DbConfig)
 	defer db.Close()
 	company := r.FormValue("company")
 	username := r.FormValue("username")
@@ -283,7 +284,7 @@ func (authHandler *AuthHandler) GetUserProfileInfo(w http.ResponseWriter, r *htt
 	}
 	print("a1\n")
 
-	db := ConnectToDb()
+	db := ConnectToDb(authHandler.configuration.DbConfig)
 	defer db.Close()
 	user, err := GetUserInfoFromDbWithUsername(db, session.username)
 	user.Username = session.username
@@ -339,7 +340,7 @@ func (authHandler *AuthHandler) ChangePassword(w http.ResponseWriter, r *http.Re
 
 	hashedPassword := hashSha256(password)
 
-	db := ConnectToDb()
+	db := ConnectToDb(authHandler.configuration.DbConfig)
 	defer db.Close()
 	err := UpdateAccountPasswordToDb(db, session.username, string(hashedPassword))
 	if err != nil {
@@ -371,7 +372,7 @@ func (authHandler *AuthHandler) DeleteAccount(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	db := ConnectToDb()
+	db := ConnectToDb(authHandler.configuration.DbConfig)
 	defer db.Close()
 
 	account, err := GetAccountInfoFromDb(db, session.username)
@@ -421,7 +422,7 @@ func (authHandler *AuthHandler) PasswordReset(w http.ResponseWriter, r *http.Req
 
 	hashedPassword := hashSha256(password)
 
-	db := ConnectToDb()
+	db := ConnectToDb(authHandler.configuration.DbConfig)
 	defer db.Close()
 
 	account, err := GetAccountInfoFromDb(db, username)

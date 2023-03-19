@@ -6,10 +6,9 @@ package main
 // These are the libraries we are going to use
 // Both "fmt" and "net" are part of the Go standard library
 import (
-
-	// "fmt" has methods for formatted I/O operations (like printing to the console)
-	"TrailersWebApp/client/src"
 	"fmt"
+	// "fmt" has methods for formatted I/O operations (like printing to the console)
+	"trailers/client/src"
 
 	// The "net/http" library has methods to implement HTTP clients and servers
 	"net/http"

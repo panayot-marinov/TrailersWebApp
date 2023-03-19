@@ -65,7 +65,7 @@ func RegisterNewAccountToDb(db *sql.DB, user User) error {
 	_, err := db.Exec(query, user.Username, user.Email, user.Password, user.Company, user.IsVerified, user.UpdatedAt, user.CreatedAt)
 	if err != nil {
 		fmt.Println("Error executing insert statement")
-		print(err)
+		fmt.Println(err)
 		print("\n")
 		return err
 	}
@@ -131,38 +131,31 @@ func SendMqttMessageToDb(db *sql.DB, mqttMessage string, mqttTopic string) error
 // 	return account, nil
 // }
 
-// func GetTrailerFromDb(db *sql.DB, serialNumber string) error {
-// 	query := "SELECT id, number, name, user_id, serial, password FROM \"Users\" WHERE serial_number = $1"
-// 	row := db.QueryRow(query, serialNumber)
+func GetTrailerRegPlateBySerialNumberFromDb(db *sql.DB, serialNumber string) (string, error) {
+	query := "SELECT registration_plate FROM \"Trailers\" WHERE serial_number = $1"
+	row := db.QueryRow(query, serialNumber)
 
-// 	var user User
-// 	err := row.Scan(&user.Id, &user.Username, &user.IsVerified, &user.CreatedAt, &user.UpdatedAt, &user.Password)
-// 	if err != nil {
-// 		fmt.Println("Error executing select statement")
-// 		return User{}, err
-// 	}
+	var registrationPlate string
+	err := row.Scan(&registrationPlate)
+	if err != nil {
+		fmt.Println("Error executing select statement")
+		return "", err
+	}
 
-// 	user.Email = email
-
-// 	return user, nil
-// }
+	return registrationPlate, nil
+}
 
 func InsertTrailerDataIntoDb(db *sql.DB, trailerData TrailerData) error {
-	print(trailerData.Latt)
-	print("\n")
-	print(trailerData.Longt)
-	print("\n")
-	print(trailerData.Weight)
-	print("\n")
-	print(trailerData.WeightStatus)
-	print("\n")
-	print(trailerData.ShuntVoltage)
-	print("\n")
-	print(trailerData.PowerSupplyVoltage)
-	print("\n")
-	query := "INSERT INTO \"TrailersData\" (lattitude, longtitude, gps_time, os_time, weight, weight_status, shunt_voltage, power_supply_voltage, trailer_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"
-	_, err := db.Exec(query, trailerData.Latt, trailerData.Longt, trailerData.GpsTime, trailerData.OsTime, trailerData.Weight,
-		trailerData.WeightStatus, trailerData.ShuntVoltage, trailerData.PowerSupplyVoltage)
+	registrationPlate, err := GetTrailerRegPlateBySerialNumberFromDb(db, trailerData.SerialNumber)
+	if err != nil {
+		fmt.Println("Error getting registration plate by serial number")
+		return err
+	}
+
+	query := "INSERT INTO \"TrailersData\" (lattitude, longtitude, gps_time, os_time, weight, weight_status, shunt_voltage, power_supply_voltage, serial_number, cpu_temp, registration_plate) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)"
+	_, err = db.Exec(query, trailerData.Latt, trailerData.Longt, trailerData.GpsTime, trailerData.OsTime, trailerData.Weight,
+		trailerData.WeightStatus, trailerData.ShuntVoltage, trailerData.PowerSupplyVoltage,
+		trailerData.SerialNumber, trailerData.CpuTemp, registrationPlate)
 	if err != nil {
 		fmt.Println(err)
 		fmt.Println("Error executing insert statement")
@@ -223,12 +216,44 @@ func UpdateAccountVerificationStatus(db *sql.DB, username string, isVerified boo
 	return nil
 }
 
-func GetTrailerDataFromDb(db *sql.DB, from time.Time, to time.Time) ([]TrailerData, error) {
+func GetTrailersDataFromDb(db *sql.DB, from time.Time, to time.Time) ([]TrailerData, error) {
 	query := "SELECT lattitude, longtitude, weight, weight_status, shunt_voltage, power_supply_voltage, gps_time, os_time FROM \"TrailersData\" WHERE \"os_time\" >= $1 AND \"os_time\" <= $2"
 	rows, err := db.Query(query, from, to)
 	if err != nil {
 		print("query err")
-		print(err)
+		fmt.Println(err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var trailerData []TrailerData
+
+	for rows.Next() {
+		var currentTailerData TrailerData
+		print("row")
+		err := rows.Scan(&currentTailerData.Latt, &currentTailerData.Longt, &currentTailerData.Weight,
+			&currentTailerData.WeightStatus, &currentTailerData.ShuntVoltage, &currentTailerData.PowerSupplyVoltage,
+			&currentTailerData.GpsTime, &currentTailerData.OsTime)
+		if err != nil {
+			fmt.Println("Error scanning row")
+			return trailerData, err
+		}
+
+		trailerData = append(trailerData, currentTailerData)
+	}
+	if err = rows.Err(); err != nil {
+		return trailerData, err
+	}
+
+	return trailerData, nil
+}
+
+func GetTrailerDataFromDb(db *sql.DB, from time.Time, to time.Time, registrationPlate string) ([]TrailerData, error) {
+	query := "SELECT lattitude, longtitude, weight, weight_status, shunt_voltage, power_supply_voltage, gps_time, os_time FROM \"TrailersData\" WHERE \"registration_plate\" = $1 AND \"os_time\" >= $2 AND \"os_time\" <= $3"
+	rows, err := db.Query(query, registrationPlate, from, to)
+	if err != nil {
+		print("query err")
+		fmt.Println(err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -256,11 +281,11 @@ func GetTrailerDataFromDb(db *sql.DB, from time.Time, to time.Time) ([]TrailerDa
 }
 
 func GetTrailersListFromDb(db *sql.DB) ([]Trailer, error) {
-	query := "SELECT id, number, name, user_id FROM \"Trailers\""
+	query := "SELECT registration_plate, name, user_id, serial_number, brand, model, city, area, address_line, zip_code FROM \"Trailers\""
 	rows, err := db.Query(query)
 	if err != nil {
 		print("query err")
-		print(err)
+		fmt.Println(err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -270,10 +295,12 @@ func GetTrailersListFromDb(db *sql.DB) ([]Trailer, error) {
 	for rows.Next() {
 		var currentTrailer Trailer
 		print("row")
-		err := rows.Scan(&currentTrailer.Id, &currentTrailer.Number, &currentTrailer.Name, &currentTrailer.UserId)
+		err := rows.Scan(&currentTrailer.RegistrationPlate, &currentTrailer.Name, &currentTrailer.UserId,
+			&currentTrailer.SerialNumber, &currentTrailer.Brand, &currentTrailer.Model,
+			&currentTrailer.City, &currentTrailer.Area, &currentTrailer.AddressLine, &currentTrailer.ZipCode)
 		if err != nil {
 			fmt.Println("Error scanning row")
-			print(err)
+			fmt.Println(err)
 			return trailers, err
 		}
 
@@ -287,18 +314,61 @@ func GetTrailersListFromDb(db *sql.DB) ([]Trailer, error) {
 }
 
 func RegisterNewTrailerToDb(db *sql.DB, trailer Trailer) error {
-	query := "INSERT INTO \"Trailers\" (number, name, user_id) VALUES ($1, $2, $3)"
-	fmt.Println(trailer.Number)
-	fmt.Println(trailer.Name)
-	fmt.Println(trailer.UserId)
+	//query := "INSERT INTO \"Trailers\" (registration_plate, name, user_id) VALUES ($1, $2, $3)"
+	query := "INSERT INTO \"Trailers\" (user_id, brand, model, name, registration_plate, serial_number, city, area, address_line, zip_code) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"
 
-	_, err := db.Exec(query, trailer.Number, trailer.Name, trailer.UserId)
+	print("user_id")
+	print(trailer.UserId)
+	//_, err := db.Exec(query, trailer.RegistrationPlate, trailer.Name, trailer.UserId)
+	_, err := db.Exec(query, trailer.UserId, trailer.Brand, trailer.Model, trailer.Name, trailer.RegistrationPlate,
+		trailer.SerialNumber, trailer.City, trailer.Area, trailer.AddressLine, trailer.ZipCode)
 	if err != nil {
 		fmt.Println("Error executing insert statement")
-		print(err)
+		fmt.Println(err)
 		print("\n")
+		return err
+	}
+	fmt.Println("Successfully inserted into db")
+
+	return nil
+}
+
+func UpdateTrailerIntoDb(db *sql.DB, trailer Trailer) error {
+	fmt.Println("Updating trailer")
+	fmt.Println("Name = " + trailer.Name)
+	query := "UPDATE \"Trailers\" SET name=$1, brand=$2, model=$3, serial_number=$4, city=$5, area=$6, address_line=$7, zip_code=$8 WHERE registration_plate=$9"
+	_, err := db.Exec(query, trailer.Name, trailer.Brand, trailer.Model, trailer.SerialNumber, trailer.City, trailer.Area, trailer.AddressLine, trailer.ZipCode, trailer.RegistrationPlate)
+
+	if err != nil {
+		fmt.Println("Error executing update statement")
+		fmt.Println(err)
 		return err
 	}
 
 	return nil
+}
+
+func DeleteTrailerFromDb(db *sql.DB, registrationPlate string) error {
+	fmt.Println("Deleting trailer")
+	query := "DELETE FROM \"Trailers\" WHERE registration_plate=$1"
+	_, err := db.Exec(query, registrationPlate)
+
+	if err != nil {
+		fmt.Println("Error executing delete statement")
+		fmt.Println(err)
+		return err
+	}
+
+	return nil
+}
+
+func newNullString(s string) sql.NullString {
+	if len(s) == 0 {
+		fmt.Println("returning null string")
+		return sql.NullString{}
+	}
+	return sql.NullString{
+		String: s,
+		Valid:  true,
+	}
 }

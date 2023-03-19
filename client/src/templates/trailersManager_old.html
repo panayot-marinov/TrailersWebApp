@@ -1,0 +1,124 @@
+<!Doctype html>
+<html>
+
+<head>
+  <title>Home</title>
+  <meta charset="UTF-8">
+  <!--Bootstrap-->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+  <link rel="stylesheet" href="styles/mainStyle.css">
+  <link rel="stylesheet" href="styles/indexStyle.css">
+</head>
+
+<body>
+
+  <div class="container" id="pageContainer">
+    <header>
+      <nav class="navbar navbar-expand-lg navbar-light bg-light" id="myNavbarId">
+        <div class="container-fluid">
+          <a class="navbar-brand" href="/">
+            <img src="images/encrypt-icon.jpg" width="50px" height="50px">
+            File encryptor
+          </a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+            data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
+            aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+              <li class="nav-item">
+                <a class="nav-link active" aria-current="page" href="/">Home</a>
+              </li>
+            </ul>
+            <form action="/api/v1/searchFile" class="d-flex" method="GET">
+              <input class="form-control me-2" type="search" placeholder="Enter a file ID" aria-label="Search"
+                name="fileId">
+              <button class="btn btn-warning" type="submit">Download</button>
+            </form>
+          </div>
+        </div>
+      </nav>
+    </header>
+    <div class="container" id="contentContainer">
+      <div class="jumbotron">
+        <div class="row>">
+          <div class="col-md-12">
+            <div class="d-flex justify-content-center">
+              <h1 style="text-align:center" id="mainHeading">Trailers manager</h1>
+            </div>
+          </div>
+        </div>
+        <br />
+        <div class="row>">
+          <div class="col-md-12">
+            <div class="d-flex justify-content-center">
+                <h4>Trailers list:</h4>
+                <br />
+
+                <div id="trailersList"></div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-12">
+            <div class="d-flex justify-content-center">
+            <h4>Add a new trailer</h4>
+            <br/>
+              <form action="/trailers/makeAddRequest" class="d-flex" method="POST">
+                  <div class="form-group">
+                      <input type="text" class="form-control form-control-lg mb-3" name="trailerNumber"
+                          placeholder="License plate number">
+                      <input type="text" class="form-control form-control-lg mb-3" name="trailerName"
+                          placeholder="Display name">
+                      <input class="btn btn-warning btn-lg " type="submit" value="Add" id="addTrailerButton">
+                  </div>
+              </form>
+              <br />
+          </div>
+          </div>
+        </div>
+      </div>
+      <footer>
+        <hr>
+        <p id="footerText"><b>Trailers project</b>&nbsp;&nbsp;All rights reserved®</p>
+      </footer>
+    </div>
+  </div>
+  <script type="text/javascript">
+    // var trailerData =  "{{.Array}}";
+    // console.log(trailerData[0]);
+    // console.log(trailerData.length);
+    var jsonStr = "{{.jsonData}}";
+    let trailers = JSON.parse(jsonStr);
+
+    (function(){
+        var ul = document.createElement('ul');
+        ul.setAttribute('id','trailersList');
+
+        document.getElementById('trailersList').appendChild(ul);
+        trailers.forEach(renderTrailersList);
+
+        function renderTrailersList(element, index, arr) {
+            var li = document.createElement('li');
+            li.setAttribute('class','item');
+
+            ul.appendChild(li);
+
+            li.innerHTML=li.innerHTML + element.Number + " " + element.Name;
+        }
+    })();
+
+    console.log(trailers);
+  </script>
+  <!--Bootstrap JS-->
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+    integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+    crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+    crossorigin="anonymous"></script>
+
+</body>

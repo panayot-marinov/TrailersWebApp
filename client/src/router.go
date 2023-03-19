@@ -43,8 +43,11 @@ func SetupRoutes() {
 
 	trailersR := r.PathPrefix("/trailers").Subrouter()
 	trailersR.HandleFunc("/data", TrailerDataDetails).Methods(http.MethodGet)
+	trailersR.HandleFunc("/add", TrailersAdd).Methods(http.MethodGet)
 	trailersR.HandleFunc("/manager", TrailersManager).Methods(http.MethodGet)
 	trailersR.HandleFunc("/makeAddRequest", MakeAddRequest).Methods(http.MethodPost)
+	trailersR.HandleFunc("/makeEditRequest", MakeEditRequest).Methods(http.MethodPost)
+	trailersR.HandleFunc("/makeDeleteRequest", MakeDeleteRequest).Methods(http.MethodPost)
 
 	r.PathPrefix("/trailers/assets/").Handler(http.StripPrefix("/trailers/assets/",
 		http.FileServer(http.Dir("./src/templates/assets"))))
@@ -105,7 +108,7 @@ func Get(w http.ResponseWriter, r *http.Request) {
 
 	//Array := [5]int{1, 2, 3, 4, 5}
 
-	b, err := io.ReadAll(resp.Body)
+	trailersData, err := io.ReadAll(resp.Body)
 	if err != nil {
 		print("aa6")
 		w.WriteHeader(http.StatusBadRequest)
@@ -144,6 +147,6 @@ func Get(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "text/html")
 	w.WriteHeader(http.StatusOK)
 	tpl.ExecuteTemplate(w, "index.html",
-		template.FuncMap{"jsonData": string(b[:]),
+		template.FuncMap{"jsonTrailersData": string(trailersData[:]),
 			"Username": user.Username, "Email": user.Email, "Company": user.Company})
 }

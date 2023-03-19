@@ -2,8 +2,14 @@ package src
 
 // User is the data type for user object
 type Trailer struct {
-	Id     int    `sql:"id"`
-	Number string `sql:"number"`
-	Name   string `sql:"name"`
-	UserId int    `sql:"user_id"`
+	Brand             string `sql:"brand"`
+	Model             string `sql:"model"`
+	RegistrationPlate string `sql:"registration_plate"`
+	Name              string `sql:"name"`
+	City              string `sql:"city"`
+	Area              string `sql:"area"`
+	AddressLine       string `sql:"address_line"`
+	UserId            int    `sql:"user_id"`
+	SerialNumber      string `sql:"serial_number"`
+	ZipCode           int    `sql:"zip_code"`
 }

@@ -17,6 +17,9 @@
   <!-- CSS Implementing Plugins -->
   <link rel="stylesheet" href="assets/vendor/bootstrap-icons/font/bootstrap-icons.css">
 
+  <link rel="stylesheet" href="./assets/vendor/tom-select/dist/css/tom-select.bootstrap5.css">
+  <link rel="stylesheet" href="./assets/vendor/quill/dist/quill.snow.css">
+
   <!-- CSS Front Template -->
 
   <link rel="preload" href="assets/css/theme.min.css" data-hs-appearance="default" as="style">
@@ -124,6 +127,8 @@
 <body class="bg-light">
 
   <script src="assets/js/hs.theme-appearance.js"></script>
+  <script src="./assets/vendor/hs-navbar-vertical-aside/dist/hs-navbar-vertical-aside-mini-cache.js"></script>
+
 
   <!-- ========== HEADER ========== -->
   <header id="header" class="navbar navbar-expand-lg navbar-sidebar-detached navbar-fixed-lg navbar-light bg-light">
@@ -1387,17 +1392,73 @@
           <div class="card-body py-10 my-lg-10">
             <!-- <img class="img-fluid mb-5" src="assets/svg/layouts/content-combinations-container-overlay.svg" alt="Image Description" data-hs-theme-appearance="default" style="max-width: 15rem;">
             <img class="img-fluid shadow-sm mb-5" src="assets/svg/layouts-light/content-combinations-container-overlay.svg" alt="Image Description" data-hs-theme-appearance="dark" style="max-width: 15rem;"> -->
-
+            <div class="row">
+              <div class="col-md-3">
             <h1>Weights</h1>
+              </div>
+              <div class="col-md-4">
+              </div>
+            <div class="col-md-5">
+            <!-- Form -->
+            <div class="mb-4">
+              <label for="trailersDropdown" class="form-label">Trailer</label>
+
+              <!-- Select -->
+              <div class="tom-select-custom">
+                <select class="js-select form-select" autocomplete="off" id="trailersDropdown" data-hs-tom-select-options='{
+                            "searchInDropdown": false,
+                            "hideSearch": true,
+                            "placeholder": "Select trailer"
+                          }'>
+                </select>
+              </div>
+              <!-- End Select -->
+
+              <span class="form-text">Select the trailer of which you want to see latest data.</span>
+            </div>
+            <!-- Form -->
+            </div>
+            </div>
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-4">
+                  <label for="datetimeFrom">Show data from:</label>
+                  <input type="datetime-local" id="datetimeFrom" name="timeFrom">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-4">
+                  <label for="datetimeTo">Show data to:</label>
+                  <input type="datetime-local" id="datetimeTo" name="timeTo">
+                </div>
+              </div>
+            </div>
             <canvas id="myChart" width="400" height="400"></canvas>
-            <label for="timeFrom">Show data from :</label>
-              <input type="datetime-local" id="datetimeFrom" name="timeFrom">
-            
-            <label for="timeFrom">Show data to :</label>
-            <input type="datetime-local" id="datetimeTo" name="timeTo">
+
           </div>
         </div>
         <!-- End Card -->
+        <div class="row">
+          <div class="col-lg-8 mb-3 mb-lg-0">
+        <!-- Card -->
+        <div class="card">
+          <!-- Header -->
+          <div class="card-header">
+            <h4 class="card-header-title">Filter data</h4>
+          </div>
+          <!-- End Header -->
+
+          <!-- Body -->
+          <div class="card-body">
+
+          </div>
+          <!-- Body -->
+        </div>
+        <!-- End Card -->
+      </div>
+      <!-- End Col -->
+    </div>
+    <!-- End Row -->
 
         <!-- Card -->
         <div class="card card-centered mb-3 mb-lg-5">
@@ -2140,6 +2201,14 @@
   <script src="assets/vendor/hs-navbar-vertical-aside/dist/hs-navbar-vertical-aside.min.js"></script>
   <script src="assets/vendor/hs-form-search/dist/hs-form-search.min.js"></script>
 
+  <script src="./assets/vendor/hs-quantity-counter/dist/hs-quantity-counter.min.js"></script>
+  <script src="./assets/vendor/hs-add-field/dist/hs-add-field.min.js"></script>
+  <script src="./assets/vendor/tom-select/dist/js/tom-select.complete.min.js"></script>
+  <script src="./assets/vendor/quill/dist/quill.min.js"></script>
+  <script src="./assets/vendor/dropzone/dist/min/dropzone.min.js"></script>
+  <script src="./assets/vendor/datatables/media/js/jquery.dataTables.min.js"></script>
+  <script src="./assets/vendor/datatables.net.extensions/select/select.min.js"></script>
+
   <!-- JS Front -->
   <script src="assets/js/theme.min.js"></script>
 
@@ -2160,6 +2229,35 @@
         // INITIALIZATION OF BOOTSTRAP DROPDOWN
         // =======================================================
         HSBsDropdown.init()
+
+
+        // INITIALIZATION OF SELECT
+        // =======================================================
+        HSCore.components.HSTomSelect.init('.js-select')
+
+
+        // INITIALIZATION OF ADD FIELD
+        // =======================================================
+        new HSAddField('.js-add-field', {
+          addedField: field => {
+            HSCore.components.HSTomSelect.init(field.querySelector('.js-select-dynamic'))
+          }
+        })
+
+
+        // INITIALIZATION OF  QUANTITY COUNTER
+        // =======================================================
+        new HSQuantityCounter('.js-quantity-counter')
+
+
+        // INITIALIZATION OF DROPZONE
+        // =======================================================
+        HSCore.components.HSDropzone.init('.js-dropzone')
+
+
+        // INITIALIZATION OF QUILLJS EDITOR
+        // =======================================================
+        HSCore.components.HSQuill.init('.js-quill')
       }
     })()
   </script>
@@ -2206,29 +2304,39 @@
 
   <!-- Start of chart js -->
   <script type="text/javascript">
-    function updateChart(oldChart, trailerData, datetimeFrom, datetimeTo) {
+    function updateDropdown(dropdown, trailerData) {
+        for (let key in trailerData) {
+          var optionElem = document.createElement('option');
+          var currentDropdownValue = key;
+          optionElem.setAttribute('value', currentDropdownValue);
+          optionElem.textContent = currentDropdownValue;
+
+          dropdown.appendChild(optionElem);
+        }
+    }
+
+    function updateChart(oldChart, trailerData, dropdown, datetimeFrom, datetimeTo) {
       if(oldChart != null) {
         oldChart.destroy();
       }
-      console.log("in updatechart");
-      var resultTrailerData = trailerData.filter(
-                    function (a)
-                    {
-                        return (a.OsTime) >= datetimeFrom.value && (a.OsTime) <= datetimeTo.value;
-                    });
-    console.log(resultTrailerData.length);
+      console.log("dropdown value = " + dropdown.value);
+      console.log("datetime from value = " + datetimeFrom.value);
+      console.log("datetime to value = " + datetimeTo.value);
+      var currentTrailerData = trailerData[dropdown.value];
 
-    //console.log(event[0].latt);
+      var resultTrailerData = [];
+      if(currentTrailerData != null) {
+          resultTrailerData = currentTrailerData.filter(
+                function (a) {
+                  return (a.OsTime) >= datetimeFrom.value && (a.OsTime) <= datetimeTo.value;
+                });
+      }
 
     const osTimes = [];
     const weights = [];
     for (var i = 0; i < resultTrailerData.length; i++) {
-       weights.push(resultTrailerData[i].weight);
+       weights.push(resultTrailerData[i].Weight);
        osTimes.push(resultTrailerData[i].OsTime);
-    }
-
-    for (var i = 0; i < trailerData.length; i++) {
-       console.log(weights[i]);
     }
 
     const myChart = new Chart(ctx, {
@@ -2269,10 +2377,13 @@
 
     const ctx = document.getElementById('myChart').getContext('2d');
     // var trailerData =  "{{.Array}}";
-    // console.log(trailerData[0]);
-    // console.log(trailerData.length);
-    var jsonStr = "{{.jsonData}}";
+    var jsonStr = "{{.jsonTrailersData}}";
     let trailerData = JSON.parse(jsonStr);
+    let trailerDataX9941AH = trailerData["X9941AH"];
+
+    var dropdown = document.getElementById('trailersDropdown');
+    updateDropdown(dropdown, trailerData);
+
 
     var datetimeFrom = document.getElementById("datetimeFrom");
     var datetimeTo = document.getElementById("datetimeTo"); 
@@ -2283,25 +2394,21 @@
     now.setDate(now.getDate() - 10);
     datetimeFrom.value = now.toISOString().slice(0, 16);
 
-
     var chart = null;
+    dropdown.addEventListener('change', (event) => {
+      chart = updateChart(chart, trailerData, dropdown, datetimeFrom, datetimeTo);
+    });
     datetimeFrom.addEventListener('change', (event) => {
         //datetimeFrom = document.getElementById("datetimeFrom");
         //datetimeTo = document.getElementById("datetimeTo");
-        //console.log(datetimeFrom.);
-        //console.log(datetimeTo.value);
-        chart = updateChart(chart, trailerData, datetimeFrom, datetimeTo);
+        chart = updateChart(chart, trailerData, dropdown, datetimeFrom, datetimeTo);
     });
     datetimeTo.addEventListener('change', (event) => {
-        chart = updateChart(chart, trailerData, datetimeFrom, datetimeTo);
+        chart = updateChart(chart, dropdown, datetimeFrom, datetimeTo);
     });
 
-    //console.log(jsonStr);
-    // console.log("jsonStr = ")
-    // console.log(jsonStr)
     //document.getElementById("testId").innerHTML = jsonStr;
-    console.log(trailerData);
-    chart = updateChart(chart , trailerData, datetimeFrom, datetimeTo);
+    chart = updateChart(chart , trailerData, dropdown, datetimeFrom, datetimeTo);
     
     </script>
     <!-- End of chart js -->

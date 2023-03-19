@@ -6,19 +6,36 @@ package main
 // These are the libraries we are going to use
 // Both "fmt" and "net" are part of the Go standard library
 import (
-
-	// "fmt" has methods for formatted I/O operations (like printing to the console)
-	"TrailersWebApp/server/src"
 	"encoding/json"
 	"fmt"
+	"gopkg.in/yaml.v3"
+	"io/ioutil"
+	"log"
+	"os"
 	"strings"
 	"time"
+	// "fmt" has methods for formatted I/O operations (like printing to the console)
+	"trailers/server/src"
 
 	// The "net/http" library has methods to implement HTTP clients and servers
 	"net/http"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
+
+var config src.Configuration
+
+func readConfiguration(fileName string) {
+	file, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		panic(err)
+	}
+
+	err = yaml.Unmarshal(file, &config)
+	if err != nil {
+		panic(err)
+	}
+}
 
 var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 	fmt.Printf("Message %s received on topic %s\n", msg.Payload(), msg.Topic())
@@ -27,16 +44,31 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 	err := json.Unmarshal(msg.Payload(), &trailerDataMqtt)
 	if err != nil {
 		print("Invalid trailers data")
+		fmt.Println(err)
 		return
 	}
 	//fmt.Printf("%f %f\n", trailerData.Latt, trailerData.Longt)
 
-	db := src.ConnectToDb()
+	db := src.ConnectToDb(config.DbConfig)
 	defer db.Close()
 
 	var trailerData src.TrailerData
+	//latt, err := strconv.ParseFloat(trailerDataMqtt.Latt, 64)
+	//if err != nil {
+	//	print("Cannot parse latt")
+	//	return
+	//}
+	//longt, err := strconv.ParseFloat(trailerDataMqtt.Longt, 64)
+	//if err != nil {
+	//	print("Cannot parse longt")
+	//	return
+	//}
+	//trailerData.Latt = latt
+	//trailerData.Longt = longt
+
 	trailerData.Latt = trailerDataMqtt.Latt
 	trailerData.Longt = trailerDataMqtt.Longt
+
 	if trailerDataMqtt.GpsTime == " : : " {
 		trailerData.GpsTime = time.Unix(0, 0)
 	} else {
@@ -55,7 +87,8 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 	trailerData.WeightStatus = trailerDataMqtt.WeightStatus
 	trailerData.ShuntVoltage = trailerDataMqtt.ShuntVoltage
 	trailerData.PowerSupplyVoltage = trailerDataMqtt.PowerSupplyVoltage
-	trailerData.SerialNumber = "123"
+	trailerData.SerialNumber = trailerDataMqtt.SerialNumber
+	trailerData.CpuTemp = trailerDataMqtt.CpuTemp
 
 	//src.SendMqttMessageToDb(db, string(msg.Payload()), string(msg.Topic()))
 	src.InsertTrailerDataIntoDb(db, trailerData)
@@ -70,7 +103,17 @@ var connectionLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, 
 }
 
 func main() {
-
+	readConfiguration("configuration/config.yaml")
+	path, err := os.Getwd()
+	if err != nil {
+		log.Println(err)
+	}
+	fmt.Println(path) // for example /home/user
+	config.MailApiConfig.SendGridApiKey = "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"
+	config.MailApiConfig.MailVerifCodeExpiration = 3
+	config.MailApiConfig.PassResetCodeExpiration = 30
+	config.MailApiConfig.MailVerifTemplateID = "d-765c9b3176b940e0bafee768b5d44124"
+	config.MailApiConfig.PassResetTemplateID = "d-8520acc570d64a5686e6fa8ef40ff2cd"
 	//mail = src.Mail()
 
 	var broker = "tcp://192.168.1.50:1883"
@@ -102,7 +145,7 @@ func main() {
 	// 	time.Sleep(time.Second)
 	// }
 	//time.Sleep(100000 * time.Second)
-	src.SetupRoutes()
+	src.SetupRoutes(config)
 
 	//client.Disconnect(100)
 }

@@ -2,28 +2,26 @@ package src
 
 import (
 	"crypto/sha256"
-	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
 )
 
-func SetupRoutes() {
+func SetupRoutes(config Configuration) {
 	logger := NewLogger()
-	var configs Configurations
-	configs.SendGridApiKey = "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"
-	configs.MailVerifCodeExpiration = 3
-	configs.PassResetCodeExpiration = 30
-	configs.MailVerifTemplateID = "d-765c9b3176b940e0bafee768b5d44124"
-	configs.PassResetTemplateID = "d-8520acc570d64a5686e6fa8ef40ff2cd"
-	mailService := NewSGMailService(logger, configs)
-	authHandler := NewAuthHandler(mailService, logger)
+	config.MailApiConfig.SendGridApiKey = "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"
+	config.MailApiConfig.MailVerifCodeExpiration = 3
+	config.MailApiConfig.PassResetCodeExpiration = 30
+	config.MailApiConfig.MailVerifTemplateID = "d-765c9b3176b940e0bafee768b5d44124"
+	config.MailApiConfig.PassResetTemplateID = "d-8520acc570d64a5686e6fa8ef40ff2cd"
+	mailService := NewSGMailService(logger, config)
+	authHandler := NewAuthHandler(mailService, logger, config)
 
 	r := mux.NewRouter()
 	//r.HandleFunc("/", Get).Methods(http.MethodGet)
 	api := r.PathPrefix("/api/v1").Subrouter()
-	api.HandleFunc("/sendData", sendData).Methods(http.MethodPost)
+	//api.HandleFunc("/sendData", sendData).Methods(http.MethodPost)
 	api.HandleFunc("/login", authHandler.Login).Methods(http.MethodPost)
 	api.HandleFunc("/register", authHandler.Register).Methods(http.MethodPost)
 	api.HandleFunc("/logout", authHandler.Logout).Methods(http.MethodPost)
@@ -41,6 +39,8 @@ func SetupRoutes() {
 	trailersR.HandleFunc("/data", authHandler.GetTrailerData).Methods(http.MethodGet)
 	trailersR.HandleFunc("/list", authHandler.GetTrailersList).Methods(http.MethodGet)
 	trailersR.HandleFunc("/add", authHandler.Add).Methods(http.MethodPost)
+	trailersR.HandleFunc("/edit", authHandler.Edit).Methods(http.MethodPost)
+	trailersR.HandleFunc("/delete", authHandler.Delete).Methods(http.MethodPost)
 
 	// api.HandleFunc("/file/{fileID}", GetFile).Methods(http.MethodGet)
 	// api.HandleFunc("/searchFile", SearchFile).Methods(http.MethodGet)
@@ -67,27 +67,27 @@ func SetupRoutes() {
 // 	tpl.ExecuteTemplate(w, "index.html", nil) //Read about nginx
 // }
 
-func sendData(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-		return
-	}
+// func sendData(w http.ResponseWriter, r *http.Request) {
+// 	if r.Method != "POST" {
+// 		http.Redirect(w, r, "/", http.StatusSeeOther)
+// 		return
+// 	}
 
-	db := ConnectToDb()
-	defer db.Close()
-	text1 := r.FormValue("text1")
-	text2 := r.FormValue("text2")
+// 	db := ConnectToDb(config.)
+// 	defer db.Close()
+// 	text1 := r.FormValue("text1")
+// 	text2 := r.FormValue("text2")
 
-	query := "INSERT INTO \"Texts\" (text1, text2) VALUES ($1, $2)"
-	_, err := db.Exec(query, text1, text2)
-	if err != nil {
-		fmt.Println("Error executing insert statement")
-		panic(err)
-	}
+// 	query := "INSERT INTO \"Texts\" (text1, text2) VALUES ($1, $2)"
+// 	_, err := db.Exec(query, text1, text2)
+// 	if err != nil {
+// 		fmt.Println("Error executing insert statement")
+// 		panic(err)
+// 	}
 
-	fmt.Println("text1 =" + text1)
-	fmt.Println("text2 =" + text2)
-}
+// 	fmt.Println("text1 =" + text1)
+// 	fmt.Println("text2 =" + text2)
+// }
 
 func hashSha256(str string) []byte {
 	data := []byte(str)

@@ -2,29 +2,29 @@ package src
 
 import (
 	"database/sql"
-	"os"
+	"strconv"
 
 	_ "github.com/lib/pq"
 )
 
-func ConnectToDb() *sql.DB {
-	//var connStr = os.Getenv("CONNSTR")
-	var host = os.Getenv("POSTGRES_HOST")
-	var port = os.Getenv("POSTGRES_PORT")
-	//var dbname = os.Getenv("POSTGRES_DB")
-	var dbname = "MainDb"
-	var user = os.Getenv("POSTGRES_USER")
-	var password = os.Getenv("POSTGRES_PASSWORD")
-	var connect_timeout = os.Getenv("POSTGRES_CONNECT_TIMEOUT")
-	var sslmode = os.Getenv("POSTGRES_SSL_MODE")
+func ConnectToDb(dbConfig DbConfiguration) *sql.DB {
+	// //var connStr = os.Getenv("CONNSTR")
+	// var host = os.Getenv("POSTGRES_HOST")
+	// var port = os.Getenv("POSTGRES_PORT")
+	// //var dbname = os.Getenv("POSTGRES_DB")
+	// var dbname = "MainDb"
+	// var user = os.Getenv("POSTGRES_USER")
+	// var password = os.Getenv("POSTGRES_PASSWORD")
+	// var connect_timeout = os.Getenv("POSTGRES_CONNECT_TIMEOUT")
+	// var sslmode = os.Getenv("POSTGRES_SSL_MODE")
 
-	var connStr = "user=" + user + " " +
-		"password=" + password + " " +
-		"host=" + host + " " +
-		"port=" + port + " " +
-		"dbname=" + dbname + " " +
-		"connect_timeout=" + connect_timeout + " " +
-		"sslmode=" + sslmode
+	var connStr = "user=" + dbConfig.User + " " +
+		"password=" + dbConfig.Pass + " " +
+		"host=" + dbConfig.Host + " " +
+		"port=" + strconv.Itoa(dbConfig.Port) + " " +
+		"dbname=" + dbConfig.Name + " " +
+		"connect_timeout=" + strconv.Itoa(dbConfig.ConnectTimeout) + " " +
+		"sslmode=" + dbConfig.SslMode
 
 	println("CONNSTR = " + connStr)
 
