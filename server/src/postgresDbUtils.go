@@ -281,7 +281,7 @@ func GetTrailerDataFromDb(db *sql.DB, from time.Time, to time.Time, registration
 }
 
 func GetTrailersListFromDb(db *sql.DB) ([]Trailer, error) {
-	query := "SELECT registration_plate, name, user_id, serial_number, brand, model, city, area, address_line, zip_code FROM \"Trailers\""
+	query := "SELECT registration_plate, name, user_id, serial_number, brand, model, city, area, address_line, zip_code, is_active FROM \"Trailers\""
 	rows, err := db.Query(query)
 	if err != nil {
 		print("query err")
@@ -297,7 +297,8 @@ func GetTrailersListFromDb(db *sql.DB) ([]Trailer, error) {
 		print("row")
 		err := rows.Scan(&currentTrailer.RegistrationPlate, &currentTrailer.Name, &currentTrailer.UserId,
 			&currentTrailer.SerialNumber, &currentTrailer.Brand, &currentTrailer.Model,
-			&currentTrailer.City, &currentTrailer.Area, &currentTrailer.AddressLine, &currentTrailer.ZipCode)
+			&currentTrailer.City, &currentTrailer.Area, &currentTrailer.AddressLine, &currentTrailer.ZipCode,
+			&currentTrailer.IsActive)
 		if err != nil {
 			fmt.Println("Error scanning row")
 			fmt.Println(err)
@@ -336,8 +337,8 @@ func RegisterNewTrailerToDb(db *sql.DB, trailer Trailer) error {
 func UpdateTrailerIntoDb(db *sql.DB, trailer Trailer) error {
 	fmt.Println("Updating trailer")
 	fmt.Println("Name = " + trailer.Name)
-	query := "UPDATE \"Trailers\" SET name=$1, brand=$2, model=$3, serial_number=$4, city=$5, area=$6, address_line=$7, zip_code=$8 WHERE registration_plate=$9"
-	_, err := db.Exec(query, trailer.Name, trailer.Brand, trailer.Model, trailer.SerialNumber, trailer.City, trailer.Area, trailer.AddressLine, trailer.ZipCode, trailer.RegistrationPlate)
+	query := "UPDATE \"Trailers\" SET name=$1, brand=$2, model=$3, serial_number=$4, city=$5, area=$6, address_line=$7, zip_code=$8, is_active=$9 WHERE registration_plate=$10"
+	_, err := db.Exec(query, trailer.Name, trailer.Brand, trailer.Model, trailer.SerialNumber, trailer.City, trailer.Area, trailer.AddressLine, trailer.ZipCode, trailer.IsActive, trailer.RegistrationPlate)
 
 	if err != nil {
 		fmt.Println("Error executing update statement")

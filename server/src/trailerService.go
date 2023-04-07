@@ -185,6 +185,16 @@ func (authHandler *AuthHandler) Edit(w http.ResponseWriter, r *http.Request) {
 	trailer.Name = r.FormValue("nameField")
 	trailer.RegistrationPlate = r.FormValue("registrationPlate")
 	trailer.SerialNumber = r.FormValue("serialNumber")
+	isActiveStr := r.FormValue("isActive")
+	fmt.Println("isActiveStr = " + isActiveStr)
+	isActive, err := strconv.ParseBool(isActiveStr)
+	if err != nil {
+		print("Cannot parse isActive to bool")
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Redirect(w, r, prevUrl, http.StatusInternalServerError)
+		return
+	}
+	trailer.IsActive = isActive
 	trailer.City = r.FormValue("city")
 	trailer.Area = r.FormValue("area")
 	trailer.AddressLine = r.FormValue("addressLine")

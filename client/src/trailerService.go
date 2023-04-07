@@ -244,6 +244,12 @@ func MakeEditRequest(w http.ResponseWriter, r *http.Request) {
 	model := r.FormValue("editModelModal")
 	registrationPlate := r.FormValue("editRegPlateModal")
 	serialNumber := r.FormValue("editSerialNumberModal")
+	isActive := r.FormValue("editIsActiveSwitch")
+	if isActive == "on" {
+		isActive = "true"
+	} else {
+		isActive = "false"
+	}
 	city := r.FormValue("editCityModal")
 	area := r.FormValue("editAreaModal")
 	addressLine := r.FormValue("addressLine")
@@ -255,6 +261,7 @@ func MakeEditRequest(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(model)
 	fmt.Println(registrationPlate)
 	fmt.Println(serialNumber)
+	fmt.Println(isActive)
 	fmt.Println(city)
 	fmt.Println(area)
 	fmt.Println(addressLine)
@@ -267,6 +274,7 @@ func MakeEditRequest(w http.ResponseWriter, r *http.Request) {
 	params.Add("model", model)
 	params.Add("registrationPlate", registrationPlate)
 	params.Add("serialNumber", serialNumber)
+	params.Add("isActive", isActive)
 	params.Add("city", city)
 	params.Add("area", area)
 	params.Add("addressLine", addressLine)

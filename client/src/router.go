@@ -112,7 +112,7 @@ func Get(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		print("aa6")
 		w.WriteHeader(http.StatusBadRequest)
-		tpl.ExecuteTemplate(w, "index.html", nil)
+		tpl.ExecuteTemplate(w, "index.html", templatesData)
 		return
 	}
 

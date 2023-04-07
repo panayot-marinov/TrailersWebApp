@@ -1,6 +1,6 @@
 package src
 
-// User is the data type for user object
+// Trailer is the data type for user object
 type Trailer struct {
 	Brand             string `sql:"brand"`
 	Model             string `sql:"model"`
@@ -12,4 +12,5 @@ type Trailer struct {
 	UserId            int    `sql:"user_id"`
 	SerialNumber      string `sql:"serial_number"`
 	ZipCode           int    `sql:"zip_code"`
+	IsActive          bool   `sql:"active"`
 }

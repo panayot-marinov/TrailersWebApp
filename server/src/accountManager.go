@@ -156,7 +156,7 @@ func (authHandler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	//Valid password
 	sessionToken := uuid.NewString()
-	expiresAt := time.Now().Add(120 * time.Second)
+	expiresAt := time.Now().Add(3 * 60 * (60 * time.Second))
 
 	sessions[sessionToken] = Session{
 		username: username,
