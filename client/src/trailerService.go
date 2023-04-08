@@ -14,7 +14,10 @@ import (
 func TrailerDataDetails(w http.ResponseWriter, r *http.Request) {
 	print("aa0")
 	client := &http.Client{}
-	req, err := http.NewRequest(http.MethodGet, "http://localhost:8081/api/v1/trailers/data", nil)
+
+	hostname := strings.Split(r.Host, ":")[0]
+	req, err := http.NewRequest(http.MethodGet,
+		config.Protocol+"://"+hostname+":"+strconv.Itoa(config.ServerPort)+"/api/v1/trailers/data", nil)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		tpl.ExecuteTemplate(w, "trailersData.html", nil)
@@ -77,7 +80,8 @@ func TrailersAdd(w http.ResponseWriter, r *http.Request) {
 	_, err := r.Cookie("session_token")
 	if err != nil {
 		print("cannot get cookie\n")
-		destUrl := "http://localhost:8080/login"
+		hostname := strings.Split(r.Host, ":")[0]
+		destUrl := config.Protocol + "://" + hostname + ":" + strconv.Itoa(config.ClientPort) + "/login"
 		http.Redirect(w, r, destUrl, http.StatusSeeOther)
 		return
 	}
@@ -91,7 +95,9 @@ func TrailersAdd(w http.ResponseWriter, r *http.Request) {
 func TrailersManager(w http.ResponseWriter, r *http.Request) {
 	print("aa0")
 	client := &http.Client{}
-	req, err := http.NewRequest(http.MethodGet, "http://localhost:8081/api/v1/trailers/list", nil)
+	hostname := strings.Split(r.Host, ":")[0]
+	req, err := http.NewRequest(http.MethodGet,
+		config.Protocol+"://"+hostname+":"+strconv.Itoa(config.ServerPort)+"/api/v1/trailers/list", nil)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		tpl.ExecuteTemplate(w, "trailersManager.html", nil)
@@ -105,7 +111,8 @@ func TrailersManager(w http.ResponseWriter, r *http.Request) {
 		//w.WriteHeader(http.StatusInternalServerError)
 		//tpl.ExecuteTemplate(w, "trailersManager.html", nil)
 		//return
-		destUrl := "http://localhost:8080/login"
+		hostname := strings.Split(r.Host, ":")[0]
+		destUrl := config.Protocol + "://" + hostname + ":" + strconv.Itoa(config.ClientPort) + "/login"
 		http.Redirect(w, r, destUrl, http.StatusFound)
 		return
 	}
@@ -174,7 +181,10 @@ func MakeAddRequest(w http.ResponseWriter, r *http.Request) {
 	params.Add("addressLine", addressLine)
 	params.Add("zipCode", zipCode)
 
-	req, err := http.NewRequest(http.MethodPost, "http://localhost:8081/api/v1/trailers/add", strings.NewReader(params.Encode()))
+	hostname := strings.Split(r.Host, ":")[0]
+	req, err := http.NewRequest(http.MethodPost,
+		config.Protocol+"://"+hostname+":"+strconv.Itoa(config.ServerPort)+"/api/v1/trailers/add",
+		strings.NewReader(params.Encode()))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		tpl.ExecuteTemplate(w, "trailersManager.html", nil)
@@ -215,20 +225,20 @@ func MakeAddRequest(w http.ResponseWriter, r *http.Request) {
 	if resp.StatusCode == http.StatusUnauthorized {
 		print("1\n")
 		w.WriteHeader(http.StatusUnauthorized)
-		destUrl := "http://localhost:8080/login"
+		destUrl := config.Protocol + "://" + hostname + ":" + strconv.Itoa(config.ClientPort) + "/login"
 		http.Redirect(w, r, destUrl, http.StatusFound)
 		return
 	} else if resp.StatusCode != http.StatusOK {
 		print("2\n")
 		w.WriteHeader(http.StatusBadRequest)
-		destUrl := "http://localhost:8080/login"
+		destUrl := config.Protocol + "://" + hostname + ":" + strconv.Itoa(config.ClientPort) + "/login"
 		http.Redirect(w, r, destUrl, http.StatusFound)
 		return
 	}
 
 	print("3\n")
 	//-----
-	destUrl := "http://localhost:8080/trailers/manager"
+	destUrl := config.Protocol + "://" + hostname + ":" + strconv.Itoa(config.ClientPort) + "/trailers/manager"
 	http.Redirect(w, r, destUrl, http.StatusSeeOther)
 
 	//tpl.ExecuteTemplate(w, "index.html", cookie)
@@ -280,7 +290,10 @@ func MakeEditRequest(w http.ResponseWriter, r *http.Request) {
 	params.Add("addressLine", addressLine)
 	params.Add("zipCode", zipCode)
 
-	req, err := http.NewRequest(http.MethodPost, "http://localhost:8081/api/v1/trailers/edit", strings.NewReader(params.Encode()))
+	hostname := strings.Split(r.Host, ":")[0]
+	req, err := http.NewRequest(http.MethodPost,
+		config.Protocol+"://"+hostname+":"+strconv.Itoa(config.ServerPort)+"/api/v1/trailers/edit",
+		strings.NewReader(params.Encode()))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		tpl.ExecuteTemplate(w, "trailersManager.html", nil)
@@ -321,20 +334,20 @@ func MakeEditRequest(w http.ResponseWriter, r *http.Request) {
 	if resp.StatusCode == http.StatusUnauthorized {
 		print("1\n")
 		w.WriteHeader(http.StatusUnauthorized)
-		destUrl := "http://localhost:8080/login"
+		destUrl := config.Protocol + "://" + hostname + ":" + strconv.Itoa(config.ClientPort) + "/login"
 		http.Redirect(w, r, destUrl, http.StatusFound)
 		return
 	} else if resp.StatusCode != http.StatusOK {
 		print("2\n")
 		w.WriteHeader(http.StatusBadRequest)
-		destUrl := "http://localhost:8080/login"
+		destUrl := config.Protocol + "://" + hostname + ":" + strconv.Itoa(config.ClientPort) + "/login"
 		http.Redirect(w, r, destUrl, http.StatusFound)
 		return
 	}
 
 	print("3\n")
 	//-----
-	destUrl := "http://localhost:8080/trailers/manager"
+	destUrl := config.Protocol + "://" + hostname + ":" + strconv.Itoa(config.ClientPort) + "/trailers/manager"
 	http.Redirect(w, r, destUrl, http.StatusSeeOther)
 }
 
@@ -367,7 +380,10 @@ func MakeDeleteRequest(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(element)
 	}
 
-	req, err := http.NewRequest(http.MethodPost, "http://localhost:8081/api/v1/trailers/delete", strings.NewReader(params.Encode()))
+	hostname := strings.Split(r.Host, ":")[0]
+	req, err := http.NewRequest(http.MethodPost,
+		config.Protocol+"://"+hostname+":"+strconv.Itoa(config.ServerPort)+"/api/v1/trailers/delete",
+		strings.NewReader(params.Encode()))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		tpl.ExecuteTemplate(w, "trailersManager.html", nil)
@@ -408,19 +424,19 @@ func MakeDeleteRequest(w http.ResponseWriter, r *http.Request) {
 	if resp.StatusCode == http.StatusUnauthorized {
 		print("1\n")
 		w.WriteHeader(http.StatusUnauthorized)
-		destUrl := "http://localhost:8080/login"
+		destUrl := config.Protocol + "://" + hostname + ":" + strconv.Itoa(config.ClientPort) + "/login"
 		http.Redirect(w, r, destUrl, http.StatusFound)
 		return
 	} else if resp.StatusCode != http.StatusOK {
 		print("2\n")
 		w.WriteHeader(http.StatusBadRequest)
-		destUrl := "http://localhost:8080/login"
+		destUrl := config.Protocol + "://" + hostname + ":" + strconv.Itoa(config.ClientPort) + "/login"
 		http.Redirect(w, r, destUrl, http.StatusFound)
 		return
 	}
 
 	print("3\n")
 	//-----
-	destUrl := "http://localhost:8080/trailers/manager"
+	destUrl := config.Protocol + "://" + hostname + ":" + strconv.Itoa(config.ClientPort) + "/trailers/manager"
 	http.Redirect(w, r, destUrl, http.StatusSeeOther)
 }

@@ -26,7 +26,8 @@ func MakeLoginRequest(w http.ResponseWriter, r *http.Request) {
 	params := url.Values{}
 	params.Add("username", username)
 	params.Add("password", password)
-	resp, _ := http.PostForm("http://localhost:8081/api/v1/login",
+	hostname := strings.Split(r.Host, ":")[0]
+	resp, _ := http.PostForm(config.Protocol+"://"+hostname+":"+strconv.Itoa(config.ServerPort)+"/api/v1/login",
 		params)
 
 	fmt.Println("respBody")
@@ -37,12 +38,12 @@ func MakeLoginRequest(w http.ResponseWriter, r *http.Request) {
 
 	if resp.StatusCode == http.StatusUnauthorized {
 		//w.WriteHeader(http.StatusFound)
-		destUrl := "http://localhost:8080/login"
+		destUrl := config.Protocol + "://" + hostname + ":" + strconv.Itoa(config.ClientPort) + "/login"
 		http.Redirect(w, r, destUrl, http.StatusFound)
 		return
 	} else if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusFound {
 		//w.WriteHeader(http.StatusFound)
-		destUrl := "http://localhost:8080/login"
+		destUrl := config.Protocol + "://" + hostname + ":" + strconv.Itoa(config.ClientPort) + "/login"
 		http.Redirect(w, r, destUrl, http.StatusFound)
 		return
 	}
@@ -63,7 +64,7 @@ func MakeLoginRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//-----
-	destUrl := "http://localhost:8080/"
+	destUrl := config.Protocol + "://" + hostname + ":" + strconv.Itoa(config.ClientPort)
 	http.Redirect(w, r, destUrl, http.StatusSeeOther)
 
 	//tpl.ExecuteTemplate(w, "index.html", cookie)
@@ -91,7 +92,9 @@ func MakeRegisterRequest(w http.ResponseWriter, r *http.Request) {
 	params.Add("username", user.Username)
 	params.Add("email", user.Email)
 	params.Add("password", user.Password)
-	resp, _ := http.PostForm("http://localhost:8081/api/v1/register", params)
+
+	hostname := strings.Split(r.Host, ":")[0]
+	resp, _ := http.PostForm(config.Protocol+"://"+hostname+":"+strconv.Itoa(config.ServerPort)+"/api/v1/register", params)
 
 	fmt.Println("respBody")
 	defer resp.Body.Close()
@@ -125,15 +128,17 @@ func MakeLogoutRequest(w http.ResponseWriter, r *http.Request) {
 		Jar: jar,
 	}
 
-	urlObj, _ := url.Parse("http://localhost:8081/api/v1/logout")
+	hostname := strings.Split(r.Host, ":")[0]
+	urlObj, _ := url.Parse(config.Protocol + "://" + hostname + ":" + strconv.Itoa(config.ServerPort) + "/api/v1/logout")
 	client.Jar.SetCookies(urlObj, []*http.Cookie{cookie})
-	resp, _ := client.PostForm("http://localhost:8081/api/v1/logout", url.Values{})
+	resp, _ := client.PostForm(config.Protocol+"://"+hostname+":"+strconv.Itoa(config.ServerPort)+"/api/v1/logout",
+		url.Values{})
 
 	fmt.Println("request made successfully")
 	if resp.StatusCode == http.StatusUnauthorized {
 		//w.WriteHeader(http.StatusOK)
 		fmt.Println("redirect 0")
-		destUrl := "http://localhost:8080/login"
+		destUrl := config.Protocol + "://" + hostname + ":" + strconv.Itoa(config.ClientPort) + "/login"
 		http.Redirect(w, r, destUrl, http.StatusSeeOther)
 		return
 	}
@@ -170,13 +175,16 @@ func MyUserProfile(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session_token")
 	if err != nil {
 		print("cannot get cookie\n")
-		destUrl := "http://localhost:8080/login"
+		hostname := strings.Split(r.Host, ":")[0]
+		destUrl := config.Protocol + "://" + hostname + ":" + strconv.Itoa(config.ClientPort) + "/login"
 		http.Redirect(w, r, destUrl, http.StatusFound)
 		return
 	}
 
 	client := &http.Client{}
-	req, err := http.NewRequest(http.MethodGet, "http://localhost:8081/api/v1/userProfile", nil)
+	hostname := strings.Split(r.Host, ":")[0]
+	req, err := http.NewRequest(http.MethodGet,
+		config.Protocol+"://"+hostname+":"+strconv.Itoa(config.ServerPort)+"/api/v1/userProfile", nil)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		tpl.ExecuteTemplate(w, "error500.html", nil)
@@ -247,7 +255,9 @@ func MakeChangePasswordRequest(w http.ResponseWriter, r *http.Request) {
 	params := url.Values{}
 	params.Add("password", password)
 	params.Add("passwordRepeated", passwordRepeated)
-	req, err := http.NewRequest(http.MethodPost, "http://localhost:8081/api/v1/changePassword", strings.NewReader(params.Encode()))
+	hostname := strings.Split(r.Host, ":")[0]
+	req, err := http.NewRequest(http.MethodPost,
+		config.Protocol+"://"+hostname+":"+strconv.Itoa(config.ServerPort)+"/api/v1/changePassword", strings.NewReader(params.Encode()))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		tpl.ExecuteTemplate(w, "error500.html", nil)
@@ -288,20 +298,20 @@ func MakeChangePasswordRequest(w http.ResponseWriter, r *http.Request) {
 	if resp.StatusCode == http.StatusUnauthorized {
 		print("1\n")
 		w.WriteHeader(http.StatusUnauthorized)
-		destUrl := "http://localhost:8080/login"
+		destUrl := config.Protocol + "://" + hostname + ":" + strconv.Itoa(config.ClientPort) + "/login"
 		http.Redirect(w, r, destUrl, http.StatusFound)
 		return
 	} else if resp.StatusCode != http.StatusOK {
 		print("2\n")
 		w.WriteHeader(http.StatusBadRequest)
-		destUrl := "http://localhost:8080/login"
+		destUrl := config.Protocol + "://" + hostname + ":" + strconv.Itoa(config.ClientPort) + "/login"
 		http.Redirect(w, r, destUrl, http.StatusFound)
 		return
 	}
 
 	print("3\n")
 	//-----
-	destUrl := "http://localhost:8080/account"
+	destUrl := config.Protocol + "://" + hostname + ":" + strconv.Itoa(config.ClientPort) + "/account"
 	http.Redirect(w, r, destUrl, http.StatusSeeOther)
 
 	//tpl.ExecuteTemplate(w, "index.html", cookie)
@@ -321,7 +331,10 @@ func MakeDeleteAccountRequest(w http.ResponseWriter, r *http.Request) {
 	params := url.Values{}
 	params.Add("password", password)
 	params.Add("passwordRepeated", passwordRepeated)
-	req, err := http.NewRequest(http.MethodPost, "http://localhost:8081/api/v1/deleteAccount", strings.NewReader(params.Encode()))
+	hostname := strings.Split(r.Host, ":")[0]
+	req, err := http.NewRequest(http.MethodPost,
+		config.Protocol+"://"+hostname+":"+strconv.Itoa(config.ServerPort)+"/api/v1/deleteAccount",
+		strings.NewReader(params.Encode()))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		tpl.ExecuteTemplate(w, "error500.html", nil)
@@ -362,20 +375,20 @@ func MakeDeleteAccountRequest(w http.ResponseWriter, r *http.Request) {
 	if resp.StatusCode == http.StatusUnauthorized {
 		print("1\n")
 		w.WriteHeader(http.StatusUnauthorized)
-		destUrl := "http://localhost:8080/login"
+		destUrl := config.Protocol + "://" + hostname + ":" + strconv.Itoa(config.ClientPort) + "/login"
 		http.Redirect(w, r, destUrl, http.StatusFound)
 		return
 	} else if resp.StatusCode != http.StatusOK {
 		print("2\n")
 		w.WriteHeader(http.StatusBadRequest)
-		destUrl := "http://localhost:8080/login"
+		destUrl := config.Protocol + "://" + hostname + ":" + strconv.Itoa(config.ClientPort) + "/login"
 		http.Redirect(w, r, destUrl, http.StatusFound)
 		return
 	}
 
 	print("3\n")
 	//-----
-	destUrl := "http://localhost:8080/account"
+	destUrl := config.Protocol + "://" + hostname + ":" + strconv.Itoa(config.ClientPort) + "/account"
 	http.Redirect(w, r, destUrl, http.StatusSeeOther)
 
 	//tpl.ExecuteTemplate(w, "index.html", cookie)
@@ -397,7 +410,9 @@ func MakePasswordResetSendEmailRequest(w http.ResponseWriter, r *http.Request) {
 
 	email := r.URL.Query().Get("email")
 
-	requestURL := "http://localhost:8081/api/v1/generatePasswordResetCode?email=" + email
+	hostname := strings.Split(r.Host, ":")[0]
+	requestURL :=
+		config.Protocol + "://" + hostname + ":" + strconv.Itoa(config.ServerPort) + "/api/v1/generatePasswordResetCode?email=" + email
 	print(requestURL)
 	print("\n")
 	client := &http.Client{}
@@ -430,7 +445,9 @@ func PasswordReset(w http.ResponseWriter, r *http.Request) {
 	print("code=")
 	print(code)
 
-	requestURL := "http://localhost:8081/api/v1/verify/passwordReset?code=" + string(code) + "&username=" + username
+	hostname := strings.Split(r.Host, ":")[0]
+	requestURL :=
+		config.Protocol + "://" + hostname + ":" + strconv.Itoa(config.ServerPort) + "/api/v1/verify/passwordReset?code=" + string(code) + "&username=" + username
 	print(requestURL)
 	print("\n")
 	client := &http.Client{}
@@ -475,7 +492,8 @@ func MakePasswordResetRequest(w http.ResponseWriter, r *http.Request) {
 	print(username)
 	print("\n")
 	//change password
-	resp, err := http.PostForm("http://localhost:8081/api/v1/passwordReset", params)
+	hostname := strings.Split(r.Host, ":")[0]
+	resp, err := http.PostForm(config.Protocol+"://"+hostname+":"+strconv.Itoa(config.ServerPort)+"/api/v1/passwordReset", params)
 	print("aa")
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

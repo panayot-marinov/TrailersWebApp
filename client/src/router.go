@@ -2,15 +2,21 @@ package src
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/gorilla/mux"
 	"html/template"
 	"io"
 	"log"
 	"net/http"
-
-	"github.com/gorilla/mux"
+	"strconv"
+	"strings"
 )
 
-func SetupRoutes() {
+var config Configuration
+
+func SetupRoutes(currentConfig Configuration) {
+	config = currentConfig
+
 	r := mux.NewRouter()
 	r.HandleFunc("/", Get).Methods(http.MethodGet)
 	r.HandleFunc("/login", Login).Methods(http.MethodGet)
@@ -62,16 +68,22 @@ func SetupRoutes() {
 func Get(w http.ResponseWriter, r *http.Request) {
 	print("aa1")
 	cookie, err := r.Cookie("session_token")
+
+	hostname := strings.Split(r.Host, ":")[0]
 	if err != nil {
 		print("cannot get cookie\n")
-		destUrl := "http://localhost:8080/login"
+
+		destUrl := config.Protocol + "://" + hostname + ":" + strconv.Itoa(config.ClientPort) + "/login"
+		fmt.Println("desturl = " + destUrl)
 		http.Redirect(w, r, destUrl, http.StatusFound)
 		return
 	}
 
 	print("aa0")
 	client := &http.Client{}
-	req, err := http.NewRequest(http.MethodGet, "http://localhost:8081/api/v1/trailers/data", nil)
+	req, err := http.NewRequest(http.MethodGet,
+		config.Protocol+"://"+hostname+":"+strconv.Itoa(config.ServerPort)+"/api/v1/trailers/data",
+		nil)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		tpl.ExecuteTemplate(w, "error500.html", nil)
@@ -90,23 +102,8 @@ func Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	print("aa3")
-	// decoder := json.NewDecoder(resp.Body)
 
 	defer resp.Body.Close()
-
-	// var trailerData []TrailerData
-	// err = decoder.Decode(&trailerData)
-	// print("aa4")
-	// // print(account.Username)
-	// // print(account.Email)
-	// if err != nil {
-	// 	print("aa5")
-	// 	w.WriteHeader(http.StatusBadRequest)
-	// 	tpl.ExecuteTemplate(w, "trailersData.html", nil)
-	// 	return
-	// }
-
-	//Array := [5]int{1, 2, 3, 4, 5}
 
 	trailersData, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -116,7 +113,9 @@ func Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req, err = http.NewRequest(http.MethodGet, "http://localhost:8081/api/v1/userProfile", nil)
+	req, err = http.NewRequest(http.MethodGet,
+		config.Protocol+"://"+hostname+":"+strconv.Itoa(config.ServerPort)+"/api/v1/userProfile",
+		nil)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		tpl.ExecuteTemplate(w, "error500.html", nil)
@@ -137,12 +136,6 @@ func Get(w http.ResponseWriter, r *http.Request) {
 
 	var user User
 	err = decoder.Decode(&user)
-	print("username=")
-	print(user.Username)
-	print("email=")
-	print(user.Email)
-	print("company=")
-	print(user.Company)
 
 	w.Header().Set("Content-type", "text/html")
 	w.WriteHeader(http.StatusOK)
