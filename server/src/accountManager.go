@@ -145,6 +145,7 @@ func (authHandler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		//http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
+	fmt.Println("user got from db successfully")
 
 	passwordsEqual := bytes.Compare(passwordHash, passwordHashDb)
 
@@ -153,6 +154,7 @@ func (authHandler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		//http.Redirect(w, r, r.Header.Get("Referer"), http.StatusUnauthorized)
 		return
 	}
+	fmt.Println("passwords are equal")
 
 	//Valid password
 	sessionToken := uuid.NewString()
@@ -173,7 +175,7 @@ func (authHandler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	//url := r.Header.Get("Referer")
 	w.WriteHeader(http.StatusFound)
 	//http.Redirect(w, r, url, http.StatusFound)
-	print("Logged in")
+	fmt.Println("Logged in")
 }
 
 func (authHandler *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {

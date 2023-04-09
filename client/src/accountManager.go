@@ -27,12 +27,14 @@ func MakeLoginRequest(w http.ResponseWriter, r *http.Request) {
 	params.Add("username", username)
 	params.Add("password", password)
 	hostname := strings.Split(r.Host, ":")[0]
+	fmt.Println("Sending request to " + config.Protocol + "://" + hostname + ":" + strconv.Itoa(config.ServerPort) + "/api/v1/login")
 	resp, _ := http.PostForm(config.Protocol+"://"+hostname+":"+strconv.Itoa(config.ServerPort)+"/api/v1/login",
 		params)
 
-	fmt.Println("respBody")
+	fmt.Println("respStatus = " + resp.Status)
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body) // response body is []byte
+	fmt.Println("respBody = ")
 	fmt.Println(string(body))
 	fmt.Println("code = " + strconv.Itoa(resp.StatusCode))
 
