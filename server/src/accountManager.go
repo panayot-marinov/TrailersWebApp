@@ -158,7 +158,7 @@ func (authHandler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	//Valid password
 	sessionToken := uuid.NewString()
-	expiresAt := time.Now().Add(3 * 60 * (60 * time.Second))
+	expiresAt := time.Now().Add(3 * time.Hour).Add(3 * time.Hour)
 
 	sessions[sessionToken] = Session{
 		username: username,
@@ -173,7 +173,7 @@ func (authHandler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	})
 
 	//url := r.Header.Get("Referer")
-	w.WriteHeader(http.StatusFound)
+	w.WriteHeader(http.StatusOK)
 	//http.Redirect(w, r, url, http.StatusFound)
 	fmt.Println("Logged in")
 }
