@@ -27,8 +27,8 @@ func MakeLoginRequest(w http.ResponseWriter, r *http.Request) {
 	params.Add("username", username)
 	params.Add("password", password)
 	hostname := strings.Split(r.Host, ":")[0]
-	fmt.Println("Sending request to " + config.Protocol + "://" + hostname + ":" + strconv.Itoa(config.ServerPort) + "/api/v1/login")
-	resp, err := http.PostForm(config.Protocol+"://"+hostname+":"+strconv.Itoa(config.ServerPort)+"/api/v1/login",
+	fmt.Println("Sending request to " + config.Protocol + "://" + config.ServerHost + ":" + strconv.Itoa(config.ServerPort) + "/api/v1/login")
+	resp, err := http.PostForm(config.Protocol+"://"+config.ServerHost+":"+strconv.Itoa(config.ServerPort)+"/api/v1/login",
 		params)
 	if err != nil {
 		fmt.Println(err)
