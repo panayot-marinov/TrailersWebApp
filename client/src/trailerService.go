@@ -15,9 +15,8 @@ func TrailerDataDetails(w http.ResponseWriter, r *http.Request) {
 	print("aa0")
 	client := &http.Client{}
 
-	hostname := strings.Split(r.Host, ":")[0]
 	req, err := http.NewRequest(http.MethodGet,
-		config.Protocol+"://"+hostname+":"+strconv.Itoa(config.ServerPort)+"/api/v1/trailers/data", nil)
+		config.Protocol+"://"+config.ServerHost+":"+strconv.Itoa(config.ServerPort)+"/api/v1/trailers/data", nil)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		tpl.ExecuteTemplate(w, "trailersData.html", nil)
@@ -95,9 +94,8 @@ func TrailersAdd(w http.ResponseWriter, r *http.Request) {
 func TrailersManager(w http.ResponseWriter, r *http.Request) {
 	print("aa0")
 	client := &http.Client{}
-	hostname := strings.Split(r.Host, ":")[0]
 	req, err := http.NewRequest(http.MethodGet,
-		config.Protocol+"://"+hostname+":"+strconv.Itoa(config.ServerPort)+"/api/v1/trailers/list", nil)
+		config.Protocol+"://"+config.ServerHost+":"+strconv.Itoa(config.ServerPort)+"/api/v1/trailers/list", nil)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		tpl.ExecuteTemplate(w, "trailersManager.html", nil)
@@ -183,7 +181,7 @@ func MakeAddRequest(w http.ResponseWriter, r *http.Request) {
 
 	hostname := strings.Split(r.Host, ":")[0]
 	req, err := http.NewRequest(http.MethodPost,
-		config.Protocol+"://"+hostname+":"+strconv.Itoa(config.ServerPort)+"/api/v1/trailers/add",
+		config.Protocol+"://"+config.ServerHost+":"+strconv.Itoa(config.ServerPort)+"/api/v1/trailers/add",
 		strings.NewReader(params.Encode()))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -292,7 +290,7 @@ func MakeEditRequest(w http.ResponseWriter, r *http.Request) {
 
 	hostname := strings.Split(r.Host, ":")[0]
 	req, err := http.NewRequest(http.MethodPost,
-		config.Protocol+"://"+hostname+":"+strconv.Itoa(config.ServerPort)+"/api/v1/trailers/edit",
+		config.Protocol+"://"+config.ServerHost+":"+strconv.Itoa(config.ServerPort)+"/api/v1/trailers/edit",
 		strings.NewReader(params.Encode()))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -382,7 +380,7 @@ func MakeDeleteRequest(w http.ResponseWriter, r *http.Request) {
 
 	hostname := strings.Split(r.Host, ":")[0]
 	req, err := http.NewRequest(http.MethodPost,
-		config.Protocol+"://"+hostname+":"+strconv.Itoa(config.ServerPort)+"/api/v1/trailers/delete",
+		config.Protocol+"://"+config.ServerHost+":"+strconv.Itoa(config.ServerPort)+"/api/v1/trailers/delete",
 		strings.NewReader(params.Encode()))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

@@ -100,8 +100,7 @@ func MakeRegisterRequest(w http.ResponseWriter, r *http.Request) {
 	params.Add("email", user.Email)
 	params.Add("password", user.Password)
 
-	hostname := strings.Split(r.Host, ":")[0]
-	resp, _ := http.PostForm(config.Protocol+"://"+hostname+":"+strconv.Itoa(config.ServerPort)+"/api/v1/register", params)
+	resp, _ := http.PostForm(config.Protocol+"://"+config.ServerHost+":"+strconv.Itoa(config.ServerPort)+"/api/v1/register", params)
 
 	fmt.Println("respBody")
 	defer resp.Body.Close()
@@ -136,9 +135,9 @@ func MakeLogoutRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	hostname := strings.Split(r.Host, ":")[0]
-	urlObj, _ := url.Parse(config.Protocol + "://" + hostname + ":" + strconv.Itoa(config.ServerPort) + "/api/v1/logout")
+	urlObj, _ := url.Parse(config.Protocol + "://" + config.ServerHost + ":" + strconv.Itoa(config.ServerPort) + "/api/v1/logout")
 	client.Jar.SetCookies(urlObj, []*http.Cookie{cookie})
-	resp, _ := client.PostForm(config.Protocol+"://"+hostname+":"+strconv.Itoa(config.ServerPort)+"/api/v1/logout",
+	resp, _ := client.PostForm(config.Protocol+"://"+config.ServerHost+":"+strconv.Itoa(config.ServerPort)+"/api/v1/logout",
 		url.Values{})
 
 	fmt.Println("request made successfully")
@@ -189,9 +188,8 @@ func MyUserProfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	client := &http.Client{}
-	hostname := strings.Split(r.Host, ":")[0]
 	req, err := http.NewRequest(http.MethodGet,
-		config.Protocol+"://"+hostname+":"+strconv.Itoa(config.ServerPort)+"/api/v1/userProfile", nil)
+		config.Protocol+"://"+config.ServerHost+":"+strconv.Itoa(config.ServerPort)+"/api/v1/userProfile", nil)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		tpl.ExecuteTemplate(w, "error500.html", nil)
@@ -264,7 +262,7 @@ func MakeChangePasswordRequest(w http.ResponseWriter, r *http.Request) {
 	params.Add("passwordRepeated", passwordRepeated)
 	hostname := strings.Split(r.Host, ":")[0]
 	req, err := http.NewRequest(http.MethodPost,
-		config.Protocol+"://"+hostname+":"+strconv.Itoa(config.ServerPort)+"/api/v1/changePassword", strings.NewReader(params.Encode()))
+		config.Protocol+"://"+config.ServerHost+":"+strconv.Itoa(config.ServerPort)+"/api/v1/changePassword", strings.NewReader(params.Encode()))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		tpl.ExecuteTemplate(w, "error500.html", nil)
@@ -340,7 +338,7 @@ func MakeDeleteAccountRequest(w http.ResponseWriter, r *http.Request) {
 	params.Add("passwordRepeated", passwordRepeated)
 	hostname := strings.Split(r.Host, ":")[0]
 	req, err := http.NewRequest(http.MethodPost,
-		config.Protocol+"://"+hostname+":"+strconv.Itoa(config.ServerPort)+"/api/v1/deleteAccount",
+		config.Protocol+"://"+config.ServerHost+":"+strconv.Itoa(config.ServerPort)+"/api/v1/deleteAccount",
 		strings.NewReader(params.Encode()))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -417,9 +415,8 @@ func MakePasswordResetSendEmailRequest(w http.ResponseWriter, r *http.Request) {
 
 	email := r.URL.Query().Get("email")
 
-	hostname := strings.Split(r.Host, ":")[0]
 	requestURL :=
-		config.Protocol + "://" + hostname + ":" + strconv.Itoa(config.ServerPort) + "/api/v1/generatePasswordResetCode?email=" + email
+		config.Protocol + "://" + config.ServerHost + ":" + strconv.Itoa(config.ServerPort) + "/api/v1/generatePasswordResetCode?email=" + email
 	print(requestURL)
 	print("\n")
 	client := &http.Client{}
@@ -452,9 +449,8 @@ func PasswordReset(w http.ResponseWriter, r *http.Request) {
 	print("code=")
 	print(code)
 
-	hostname := strings.Split(r.Host, ":")[0]
 	requestURL :=
-		config.Protocol + "://" + hostname + ":" + strconv.Itoa(config.ServerPort) + "/api/v1/verify/passwordReset?code=" + string(code) + "&username=" + username
+		config.Protocol + "://" + config.ServerHost + ":" + strconv.Itoa(config.ServerPort) + "/api/v1/verify/passwordReset?code=" + string(code) + "&username=" + username
 	print(requestURL)
 	print("\n")
 	client := &http.Client{}
@@ -499,8 +495,7 @@ func MakePasswordResetRequest(w http.ResponseWriter, r *http.Request) {
 	print(username)
 	print("\n")
 	//change password
-	hostname := strings.Split(r.Host, ":")[0]
-	resp, err := http.PostForm(config.Protocol+"://"+hostname+":"+strconv.Itoa(config.ServerPort)+"/api/v1/passwordReset", params)
+	resp, err := http.PostForm(config.Protocol+"://"+config.ServerHost+":"+strconv.Itoa(config.ServerPort)+"/api/v1/passwordReset", params)
 	print("aa")
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

@@ -82,7 +82,7 @@ func Get(w http.ResponseWriter, r *http.Request) {
 	print("aa0")
 	client := &http.Client{}
 	req, err := http.NewRequest(http.MethodGet,
-		config.Protocol+"://"+hostname+":"+strconv.Itoa(config.ServerPort)+"/api/v1/trailers/data",
+		config.Protocol+"://"+config.ServerHost+":"+strconv.Itoa(config.ServerPort)+"/api/v1/trailers/data",
 		nil)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -114,7 +114,7 @@ func Get(w http.ResponseWriter, r *http.Request) {
 	}
 
 	req, err = http.NewRequest(http.MethodGet,
-		config.Protocol+"://"+hostname+":"+strconv.Itoa(config.ServerPort)+"/api/v1/userProfile",
+		config.Protocol+"://"+config.ServerHost+":"+strconv.Itoa(config.ServerPort)+"/api/v1/userProfile",
 		nil)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

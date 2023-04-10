@@ -3,7 +3,6 @@ package src
 import (
 	"net/http"
 	"strconv"
-	"strings"
 )
 
 func VerifyMail(w http.ResponseWriter, r *http.Request) {
@@ -16,8 +15,7 @@ func VerifyMail(w http.ResponseWriter, r *http.Request) {
 	print("code=")
 	print(code)
 
-	hostname := strings.Split(r.Host, ":")[0]
-	requestURL := config.Protocol + "://" + hostname + ":" + strconv.Itoa(config.ServerPort) + "/api/v1/verify/mail?code=" + string(code) + "&username=" + username
+	requestURL := config.Protocol + "://" + config.ServerHost + ":" + strconv.Itoa(config.ServerPort) + "/api/v1/verify/mail?code=" + string(code) + "&username=" + username
 	print(requestURL)
 	print("\n")
 	client := &http.Client{}
@@ -50,8 +48,7 @@ func VerifyPasswordReset(w http.ResponseWriter, r *http.Request) {
 	print("code=")
 	print(code)
 
-	hostname := strings.Split(r.Host, ":")[0]
-	requestURL := config.Protocol + "://" + hostname + ":" + strconv.Itoa(config.ServerPort) + "/api/v1/verify/passwordReset?code=" + string(code) + "&username=" + username
+	requestURL := config.Protocol + "://" + config.ServerHost + ":" + strconv.Itoa(config.ServerPort) + "/api/v1/verify/passwordReset?code=" + string(code) + "&username=" + username
 	print(requestURL)
 	print("\n")
 	client := &http.Client{}
