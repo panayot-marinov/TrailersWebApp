@@ -62,6 +62,7 @@ const (
 
 // MailData represents the data to be sent to the template of the mail.
 type MailData struct {
+	Host     string
 	Username string
 	Code     string
 }
@@ -92,7 +93,7 @@ func (ms *SGMailService) CreateMail(mailReq *Mail) []byte {
 
 	m := mail.NewV3Mail()
 
-	from := mail.NewEmail("bookite", mailReq.from)
+	from := mail.NewEmail("Trailers project", mailReq.from)
 	m.SetFrom(from)
 
 	if mailReq.mtype == MailConfirmation {
@@ -109,7 +110,7 @@ func (ms *SGMailService) CreateMail(mailReq *Mail) []byte {
 	}
 
 	p.AddTos(tos...)
-
+	p.SetDynamicTemplateData("Host", mailReq.data.Host)
 	p.SetDynamicTemplateData("Username", mailReq.data.Username)
 	p.SetDynamicTemplateData("Code", mailReq.data.Code)
 	p.Subject = "Trailers account verification"
@@ -166,7 +167,7 @@ func (authHandler *AuthHandler) NewMail(from string, to []string, subject string
 	}
 }
 
-func (authHandler *AuthHandler) SendVerificationMail(db *sql.DB, user User) error {
+func (authHandler *AuthHandler) SendVerificationMail(db *sql.DB, user User, host string) error {
 	from := "panayot.marinov12@gmail.com"
 	to := []string{user.Email}
 	print("to = ")
@@ -176,9 +177,11 @@ func (authHandler *AuthHandler) SendVerificationMail(db *sql.DB, user User) erro
 	subject := "Email Verification for Bookite"
 	mailType := MailConfirmation
 	mailData := &MailData{
+		Host:     host,
 		Username: user.Username,
 		Code:     GenerateRandomString(8),
 	}
+	fmt.Println("Code is " + mailData.Code)
 
 	mailReq := authHandler.NewMail(from, to, subject, mailType, mailData)
 	err := authHandler.mailService.SendMail(mailReq)
@@ -304,13 +307,14 @@ func (authHandler *AuthHandler) Verify(db *sql.DB, actualVerificationData *Verif
 	return true, nil
 }
 
-func (authHandler *AuthHandler) SendPasswordResetMail(db *sql.DB, user User) error {
+func (authHandler *AuthHandler) SendPasswordResetMail(db *sql.DB, user User, host string) error {
 	from := "panayot.marinov12@gmail.com"
 	to := []string{user.Email}
 
 	subject := "Email Verification for Bookite"
 	mailType := MailConfirmation
 	mailData := &MailData{
+		Host:     host,
 		Username: user.Username,
 		Code:     GenerateRandomString(8),
 	}
@@ -342,9 +346,10 @@ func (authHandler *AuthHandler) GeneratePasswordResetCode(w http.ResponseWriter,
 
 	w.Header().Set("Content-Type", "application/json")
 
-	email := r.URL.Query().Get("email")
-	print("email=")
-	print(email)
+	host := r.FormValue("host")
+	email := r.FormValue("email")
+	fmt.Println("email = " + email)
+	fmt.Println("host = " + host)
 
 	db := ConnectToDb(authHandler.configuration.DbConfig)
 	defer db.Close()
@@ -359,9 +364,10 @@ func (authHandler *AuthHandler) GeneratePasswordResetCode(w http.ResponseWriter,
 	// Send verification mail
 	from := "panayot.marinov12@gmail.com"
 	to := []string{user.Email}
-	subject := "Password Reset for Bookite"
+	subject := "Password Reset for trailers"
 	mailType := PassReset
 	mailData := &MailData{
+		Host:     host,
 		Username: user.Username,
 		Code:     GenerateRandomString(8),
 	}
@@ -450,33 +456,34 @@ func (authHandler *AuthHandler) VerifyPasswordReset(w http.ResponseWriter, r *ht
 	w.WriteHeader(http.StatusAccepted)
 }
 
-func (authHandler *AuthHandler) SendPasswordResetEmail(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		//destUrl := "http://localhost:8080/"
-		w.WriteHeader(http.StatusUnauthorized)
-		//http.Redirect(w, r, destUrl, http.StatusAccepted)
-		return
-	}
-
-	email := r.FormValue("email")
-	print("email=")
-	print(email)
-
-	db := ConnectToDb(authHandler.configuration.DbConfig)
-	defer db.Close()
-	user, err := GetUserInfoFromDbWithEmail(db, email)
-	if err != nil {
-		fmt.Println("Error getting user info from db")
-		w.WriteHeader(http.StatusInternalServerError)
-		panic(err)
-	}
-
-	err = authHandler.SendVerificationMail(db, user)
-	if err != nil {
-		fmt.Println("Error sending verification email")
-		w.WriteHeader(http.StatusInternalServerError)
-		panic(err)
-	}
-
-	w.WriteHeader(http.StatusAccepted)
-}
+//func (authHandler *AuthHandler) SendPasswordResetEmail(w http.ResponseWriter, r *http.Request) {
+//	if r.Method != "POST" {
+//		//destUrl := "http://localhost:8080/"
+//		w.WriteHeader(http.StatusUnauthorized)
+//		//http.Redirect(w, r, destUrl, http.StatusAccepted)
+//		return
+//	}
+//
+//	host := r.FormValue("host")
+//	email := r.FormValue("email")
+//	print("email=")
+//	print(email)
+//
+//	db := ConnectToDb(authHandler.configuration.DbConfig)
+//	defer db.Close()
+//	user, err := GetUserInfoFromDbWithEmail(db, email)
+//	if err != nil {
+//		fmt.Println("Error getting user info from db")
+//		w.WriteHeader(http.StatusInternalServerError)
+//		panic(err)
+//	}
+//
+//	err = authHandler.SendVerificationMail(db, user, host)
+//	if err != nil {
+//		fmt.Println("Error sending verification email")
+//		w.WriteHeader(http.StatusInternalServerError)
+//		panic(err)
+//	}
+//
+//	w.WriteHeader(http.StatusAccepted)
+//}

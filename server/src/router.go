@@ -28,7 +28,7 @@ func SetupRoutes(config Configuration) {
 	api.HandleFunc("/userProfile", authHandler.GetUserProfileInfo).Methods(http.MethodGet)
 	api.HandleFunc("/changePassword", authHandler.ChangePassword).Methods(http.MethodPost)
 	api.HandleFunc("/deleteAccount", authHandler.DeleteAccount).Methods(http.MethodPost)
-	api.HandleFunc("/generatePasswordResetCode", authHandler.GeneratePasswordResetCode).Methods(http.MethodGet)
+	api.HandleFunc("/generatePasswordResetCode", authHandler.GeneratePasswordResetCode).Methods(http.MethodPost)
 	api.HandleFunc("/passwordReset", authHandler.PasswordReset).Methods(http.MethodPost)
 
 	mailR := api.PathPrefix("/verify").Methods(http.MethodGet).Subrouter()

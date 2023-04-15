@@ -95,6 +95,7 @@ func MakeRegisterRequest(w http.ResponseWriter, r *http.Request) {
 	user.Password = r.FormValue("password")
 
 	params := url.Values{}
+	params.Add("host", r.Host)
 	params.Add("company", user.Company)
 	params.Add("username", user.Username)
 	params.Add("email", user.Email)
@@ -416,20 +417,16 @@ func MakePasswordResetSendEmailRequest(w http.ResponseWriter, r *http.Request) {
 	email := r.URL.Query().Get("email")
 
 	requestURL :=
-		config.Protocol + "://" + config.ServerHost + ":" + strconv.Itoa(config.ServerPort) + "/api/v1/generatePasswordResetCode?email=" + email
+		config.Protocol + "://" + config.ServerHost + ":" + strconv.Itoa(config.ServerPort) + "/api/v1/generatePasswordResetCode"
+
+	params := url.Values{}
+	params.Add("host", r.Host)
+	params.Add("email", email)
 	print(requestURL)
 	print("\n")
-	client := &http.Client{}
-	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		print("1")
-		tpl.ExecuteTemplate(w, "error500.html", nil)
-		return
-	}
-
-	resp, err := client.Do(req)
-	if err != nil || resp.StatusCode != http.StatusAccepted {
+	resp, err := http.PostForm(requestURL, params)
+	defer resp.Body.Close()
+	if err != nil || resp.StatusCode != http.StatusOK {
 		print("cannot call api correctly\n")
 		w.WriteHeader(http.StatusInternalServerError)
 		tpl.ExecuteTemplate(w, "error500.html", nil)
@@ -437,7 +434,7 @@ func MakePasswordResetSendEmailRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	tpl.ExecuteTemplate(w, "index.html", nil)
+	tpl.ExecuteTemplate(w, "passwordResetEmailSent.html", template.FuncMap{"Email": email})
 }
 
 func PasswordReset(w http.ResponseWriter, r *http.Request) {

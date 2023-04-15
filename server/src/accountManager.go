@@ -188,6 +188,7 @@ func (authHandler *AuthHandler) Register(w http.ResponseWriter, r *http.Request)
 
 	db := ConnectToDb(authHandler.configuration.DbConfig)
 	defer db.Close()
+	host := r.FormValue("host")
 	company := r.FormValue("company")
 	username := r.FormValue("username")
 	email := r.FormValue("email")
@@ -215,7 +216,8 @@ func (authHandler *AuthHandler) Register(w http.ResponseWriter, r *http.Request)
 		panic(err)
 	}
 
-	err = authHandler.SendVerificationMail(db, user)
+	fmt.Println("host = " + host)
+	err = authHandler.SendVerificationMail(db, user, host)
 	if err != nil {
 		fmt.Println("Error sending verification email")
 		w.WriteHeader(http.StatusInternalServerError)
