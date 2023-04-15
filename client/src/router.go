@@ -62,7 +62,7 @@ func SetupRoutes(currentConfig Configuration) {
 
 	http.Handle("/", r)
 
-	log.Fatal(http.ListenAndServe(":8080", r))
+	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(config.ClientPort), r))
 }
 
 func Get(w http.ResponseWriter, r *http.Request) {

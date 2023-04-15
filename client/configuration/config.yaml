@@ -1,4 +1,4 @@
 protocol: "http"
-clientPort: 8080
+clientPort: 80
 serverHost: "localhost"
 serverPort: 8081
