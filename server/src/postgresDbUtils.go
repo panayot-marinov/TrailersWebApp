@@ -216,9 +216,42 @@ func UpdateAccountVerificationStatus(db *sql.DB, username string, isVerified boo
 	return nil
 }
 
-func GetTrailersDataFromDb(db *sql.DB, from time.Time, to time.Time) ([]TrailerData, error) {
-	query := "SELECT lattitude, longtitude, weight, weight_status, shunt_voltage, power_supply_voltage, gps_time, os_time FROM \"TrailersData\" WHERE \"os_time\" >= $1 AND \"os_time\" <= $2"
-	rows, err := db.Query(query, from, to)
+//func GetTrailersDataFromDb(db *sql.DB, from time.Time, to time.Time) ([]TrailerData, error) {
+//	query := "SELECT lattitude, longtitude, weight, weight_status, shunt_voltage, power_supply_voltage, gps_time, os_time FROM \"TrailersData\" WHERE \"os_time\" >= $1 AND \"os_time\" <= $2"
+//	rows, err := db.Query(query, from, to)
+//	if err != nil {
+//		print("query err")
+//		fmt.Println(err)
+//		return nil, err
+//	}
+//	defer rows.Close()
+//
+//	var trailerData []TrailerData
+//
+//	for rows.Next() {
+//		var currentTailerData TrailerData
+//		print("row")
+//		err := rows.Scan(&currentTailerData.Latt, &currentTailerData.Longt, &currentTailerData.Weight,
+//			&currentTailerData.WeightStatus, &currentTailerData.ShuntVoltage, &currentTailerData.PowerSupplyVoltage,
+//			&currentTailerData.GpsTime, &currentTailerData.OsTime)
+//		if err != nil {
+//			fmt.Println("Error scanning row")
+//			return trailerData, err
+//		}
+//
+//		trailerData = append(trailerData, currentTailerData)
+//	}
+//	if err = rows.Err(); err != nil {
+//		return trailerData, err
+//	}
+//
+//	return trailerData, nil
+//}
+
+func GetTrailerDataFromDb(db *sql.DB, from time.Time, to time.Time, registrationPlate string, username string) ([]TrailerData, error) {
+	//query := "SELECT lattitude, longtitude, weight, weight_status, shunt_voltage, power_supply_voltage, gps_time, os_time FROM \"TrailersData\" WHERE \"registration_plate\" = $1 AND \"os_time\" >= $2 AND \"os_time\" <= $3"
+	query := "SELECT lattitude, longtitude, weight, weight_status, shunt_voltage, power_supply_voltage, gps_time, os_time\nFROM \"TrailersData\"\nJOIN \"Trailers\" t ON \"TrailersData\".registration_plate = t.registration_plate\nJOIN \"Users\" u ON t.user_id = u.id\nWHERE \"TrailersData\".registration_plate = $1\nAND \"os_time\" >= $2\nAND \"os_time\" <= $3\nAND username = $4"
+	rows, err := db.Query(query, registrationPlate, from, to, username)
 	if err != nil {
 		print("query err")
 		fmt.Println(err)
@@ -248,41 +281,10 @@ func GetTrailersDataFromDb(db *sql.DB, from time.Time, to time.Time) ([]TrailerD
 	return trailerData, nil
 }
 
-func GetTrailerDataFromDb(db *sql.DB, from time.Time, to time.Time, registrationPlate string) ([]TrailerData, error) {
-	query := "SELECT lattitude, longtitude, weight, weight_status, shunt_voltage, power_supply_voltage, gps_time, os_time FROM \"TrailersData\" WHERE \"registration_plate\" = $1 AND \"os_time\" >= $2 AND \"os_time\" <= $3"
-	rows, err := db.Query(query, registrationPlate, from, to)
-	if err != nil {
-		print("query err")
-		fmt.Println(err)
-		return nil, err
-	}
-	defer rows.Close()
-
-	var trailerData []TrailerData
-
-	for rows.Next() {
-		var currentTailerData TrailerData
-		print("row")
-		err := rows.Scan(&currentTailerData.Latt, &currentTailerData.Longt, &currentTailerData.Weight,
-			&currentTailerData.WeightStatus, &currentTailerData.ShuntVoltage, &currentTailerData.PowerSupplyVoltage,
-			&currentTailerData.GpsTime, &currentTailerData.OsTime)
-		if err != nil {
-			fmt.Println("Error scanning row")
-			return trailerData, err
-		}
-
-		trailerData = append(trailerData, currentTailerData)
-	}
-	if err = rows.Err(); err != nil {
-		return trailerData, err
-	}
-
-	return trailerData, nil
-}
-
-func GetTrailersListFromDb(db *sql.DB) ([]Trailer, error) {
-	query := "SELECT registration_plate, name, user_id, serial_number, brand, model, city, area, address_line, zip_code, is_active FROM \"Trailers\""
-	rows, err := db.Query(query)
+func GetTrailersListFromDb(db *sql.DB, username string) ([]Trailer, error) {
+	//query := "SELECT registration_plate, name, user_id, serial_number, brand, model, city, area, address_line, zip_code, is_active FROM \"Trailers\""
+	query := "SELECT registration_plate, name, user_id, serial_number, brand, model, city, area, address_line, zip_code, is_active\nFROM \"Trailers\"\nJOIN \"Users\" u ON \"Trailers\".user_id = u.id\nWHERE username = $1"
+	rows, err := db.Query(query, username)
 	if err != nil {
 		print("query err")
 		fmt.Println(err)

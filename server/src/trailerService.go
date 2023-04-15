@@ -19,6 +19,13 @@ func (authHandler *AuthHandler) GetTrailerData(w http.ResponseWriter, r *http.Re
 	}
 	print("a1\n")
 
+	hasValidData, session, _ := authHandler.CheckCookie(w, r)
+	if !hasValidData {
+		w.WriteHeader(http.StatusUnauthorized)
+		http.Redirect(w, r, prevUrl, http.StatusUnauthorized)
+		return
+	}
+
 	db := ConnectToDb(authHandler.configuration.DbConfig)
 	defer db.Close()
 	//TODO: remove that
@@ -34,7 +41,7 @@ func (authHandler *AuthHandler) GetTrailerData(w http.ResponseWriter, r *http.Re
 	//}
 	//print("a4\n")
 
-	trailers, err := GetTrailersListFromDb(db)
+	trailers, err := GetTrailersListFromDb(db, session.username)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		http.Redirect(w, r, prevUrl, http.StatusBadRequest)
@@ -44,7 +51,7 @@ func (authHandler *AuthHandler) GetTrailerData(w http.ResponseWriter, r *http.Re
 	var trailerDataMap map[string][]TrailerData
 	trailerDataMap = make(map[string][]TrailerData)
 	for _, trailer := range trailers {
-		trailerData, err := GetTrailerDataFromDb(db, from, to, trailer.RegistrationPlate)
+		trailerData, err := GetTrailerDataFromDb(db, from, to, trailer.RegistrationPlate, session.username)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			http.Redirect(w, r, prevUrl, http.StatusBadRequest)
@@ -70,7 +77,7 @@ func (authHandler *AuthHandler) GetTrailerData(w http.ResponseWriter, r *http.Re
 func (authHandler *AuthHandler) GetTrailersList(w http.ResponseWriter, r *http.Request) {
 	prevUrl := r.Header.Get("Referer")
 	print("a0")
-	hasValidData, _, _ := authHandler.CheckCookie(w, r)
+	hasValidData, session, _ := authHandler.CheckCookie(w, r)
 	if !hasValidData {
 		w.WriteHeader(http.StatusUnauthorized)
 		http.Redirect(w, r, prevUrl, http.StatusUnauthorized)
@@ -81,7 +88,7 @@ func (authHandler *AuthHandler) GetTrailersList(w http.ResponseWriter, r *http.R
 	db := ConnectToDb(authHandler.configuration.DbConfig)
 	defer db.Close()
 	var trailers []Trailer
-	trailers, err := GetTrailersListFromDb(db)
+	trailers, err := GetTrailersListFromDb(db, session.username)
 	print("a2\n")
 	if err != nil {
 		print("a3\n")
