@@ -141,7 +141,7 @@ func (authHandler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	row := db.QueryRow("SELECT \"password\" FROM \"Users\" WHERE \"username\"=$1", username)
 	if err := row.Scan(&passwordHashDb); err != nil {
 		fmt.Println("ERROR! Cannot execute select query!")
-		w.WriteHeader(http.StatusSeeOther)
+		w.WriteHeader(http.StatusUnauthorized)
 		//http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}

@@ -46,12 +46,7 @@ func MakeLoginRequest(w http.ResponseWriter, r *http.Request) {
 	if resp.StatusCode == http.StatusUnauthorized {
 		//w.WriteHeader(http.StatusFound)
 		destUrl := config.Protocol + "://" + hostname + ":" + strconv.Itoa(config.ClientPort) + "/login"
-		http.Redirect(w, r, destUrl, http.StatusFound)
-		return
-	} else if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusFound {
-		//w.WriteHeader(http.StatusFound)
-		destUrl := config.Protocol + "://" + hostname + ":" + strconv.Itoa(config.ClientPort) + "/login"
-		http.Redirect(w, r, destUrl, http.StatusFound)
+		http.Redirect(w, r, destUrl, http.StatusSeeOther)
 		return
 	}
 
@@ -72,7 +67,7 @@ func MakeLoginRequest(w http.ResponseWriter, r *http.Request) {
 
 	//-----
 	destUrl := config.Protocol + "://" + hostname + ":" + strconv.Itoa(config.ClientPort)
-	http.Redirect(w, r, destUrl, http.StatusSeeOther)
+	http.Redirect(w, r, destUrl, http.StatusFound)
 
 	//tpl.ExecuteTemplate(w, "index.html", cookie)
 
