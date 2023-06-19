@@ -10,11 +10,6 @@ import (
 
 func SetupRoutes(config Configuration) {
 	logger := NewLogger()
-	config.MailApiConfig.SendGridApiKey = "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"
-	config.MailApiConfig.MailVerifCodeExpiration = 3
-	config.MailApiConfig.PassResetCodeExpiration = 30
-	config.MailApiConfig.MailVerifTemplateID = "d-765c9b3176b940e0bafee768b5d44124"
-	config.MailApiConfig.PassResetTemplateID = "d-8520acc570d64a5686e6fa8ef40ff2cd"
 	mailService := NewSGMailService(logger, config)
 	authHandler := NewAuthHandler(mailService, logger, config)
 
